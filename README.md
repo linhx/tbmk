@@ -10,6 +10,7 @@ Works on:
 
 TODO
 
+- [ ] Build standalone app
 - [ ] Zsh
 - [ ] Windows
 - [ ] Mac
