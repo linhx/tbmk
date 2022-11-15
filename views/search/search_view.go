@@ -36,9 +36,7 @@ func InitialModel(bmk bookmark.Bookmark, query string) Model {
 	ti.SetValue(query)
 
 	var matches []bookmark.MatchedItem
-	if len(query) > 0 {
-		matches, _ = bmk.Search(query)
-	}
+	matches, _ = bmk.Search(query)
 
 	return Model{
 		query:      query,

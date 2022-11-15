@@ -166,6 +166,16 @@ func (bmk *Bookmark) Search(query string) ([]MatchedItem, error) {
 		}
 	}
 	var allBmkis = *bmk.cacheBmkis
+	if len(query) == 0 {
+		for _, bmki := range allBmkis {
+			matchesBmkis = append(matchesBmkis, MatchedItem{
+				Id:      bmki.Id,
+				Title:   bmki.Title,
+				Command: bmki.Command,
+			})
+		}
+		return matchesBmkis, nil
+	}
 	var allBmkisTitle []string
 	var allBmkisCommand []string
 	for _, bmki := range allBmkis {
