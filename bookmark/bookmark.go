@@ -134,8 +134,21 @@ func (bmk *Bookmark) Save(title string, command string, override bool) (Bookmark
 	return bmk.repo.save(title, command, override)
 }
 
-func (bmk *Bookmark) remove(id string) error {
+func (bmk *Bookmark) Remove(id string) error {
 	err := bmk.repo.remove(id)
+
+	var cacheBmkis = *(bmk.cacheBmkis)
+	var index int = -1
+	for i, n := range cacheBmkis {
+		if n.Id == id {
+			index = i
+			break
+		}
+	}
+	if index > -1 {
+		cacheBmkis = append(cacheBmkis[:index], cacheBmkis[index+1:]...)
+		bmk.cacheBmkis = &cacheBmkis
+	}
 	return err
 }
 

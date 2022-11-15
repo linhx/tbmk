@@ -25,6 +25,7 @@ type Model struct {
 	lastIndex    int
 	SelectedItem bookmark.MatchedItem
 	quit         bool
+	deleteMode   bool
 }
 
 func InitialModel(bmk bookmark.Bookmark, query string) Model {
@@ -47,10 +48,22 @@ func InitialModel(bmk bookmark.Bookmark, query string) Model {
 		firstIndex: 0,
 		lastIndex:  min(MAX_DISPLAY_ITEMS-1, len(matches)-1),
 		matches:    matches,
+		deleteMode: false,
 	}
 }
 
-func (m *Model) jumpCursor(goDown bool) {
+func (m *Model) reCalcCursor() {
+	matchesLastIndex := len(m.matches) - 1
+	if m.cursor >= matchesLastIndex {
+		m.cursor = matchesLastIndex
+	}
+	if m.lastIndex > matchesLastIndex {
+		m.lastIndex = matchesLastIndex
+	}
+	m.firstIndex = max(m.lastIndex-MAX_DISPLAY_ITEMS+1, 0)
+}
+
+func (m *Model) moveCursor(goDown bool) {
 	if goDown {
 		if m.cursor < len(m.matches)-1 {
 			m.cursor++
@@ -118,16 +131,41 @@ var (
 	matchedSelectedStyle = color.New(color.Yellow, color.BgGray)
 )
 
-func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m Model) updateDeleteMode(msg tea.Msg) (tea.Model, tea.Cmd) {
+	var err errMsg
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "y":
+			m.bmk.Remove(m.matches[m.cursor].Id)
+			m.matches, err = m.bmk.Search(m.query)
+			m.reCalcCursor()
+			m.deleteMode = false
+		case "n", "ctrl+c":
+			m.deleteMode = false
+		}
+	case errMsg:
+		m.err = msg
+		return m, nil
+	}
+
+	if err != nil {
+		m.err = err
+		return m, nil
+	}
+	return m, nil
+}
+
+func (m Model) updateSearchMode(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	var err errMsg
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.Type {
 		case tea.KeyUp:
-			m.jumpCursor(false)
+			m.moveCursor(false)
 		case tea.KeyDown:
-			m.jumpCursor(true)
+			m.moveCursor(true)
 		case tea.KeyRunes:
 			m.resetCursor()
 		case tea.KeyBackspace:
@@ -143,6 +181,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case tea.KeyCtrlC, tea.KeyEsc:
 			m.quit = true
 			return m, tea.Quit
+		case tea.KeyCtrlD:
+			m.deleteMode = true
+			return m, cmd
 		}
 
 	// We handle errors just like any other message
@@ -164,7 +205,22 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
+func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	if m.deleteMode {
+		return m.updateDeleteMode(msg)
+	} else {
+		return m.updateSearchMode(msg)
+	}
+}
+
+func (m Model) DeleteView() string {
+	return "Do you want to delete item " + selectedStyle.Render(m.matches[m.cursor].Command) + "? (y/n)"
+}
+
 func (m Model) View() string {
+	if m.deleteMode {
+		return m.DeleteView()
+	}
 	if m.quit {
 		return ""
 	}
@@ -223,5 +279,5 @@ func (m Model) View() string {
 			matchesContent += line + "\n"
 		}
 	}
-	return m.queryInput.View() + "\n" + matchesContent
+	return m.queryInput.View() + "\n" + matchesContent + "\n" + strconv.Itoa(m.firstIndex) + " " + strconv.Itoa(m.lastIndex)
 }
