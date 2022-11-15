@@ -199,7 +199,7 @@ func (m Model) View() string {
 			}
 			// break line between tile and command
 			if isSelected {
-				line += selectedStyle.Render(":\n > ")
+				line += selectedStyle.Render(":") + "\n" + selectedStyle.Render(" > ")
 			} else {
 				line += ":\n > "
 			}
