@@ -46,19 +46,9 @@ func main() {
 	case "save":
 		saveCmd.Parse(os.Args[2:])
 		p := tea.NewProgram(saveView.InitialModel(*bmk, *saveCommand), tea.WithOutput(os.Stderr))
-		m, err := p.Run()
+		_, err := p.Run()
 		if err != nil {
 			log.Fatal(err)
-		}
-		model := m.(saveView.Model)
-		if model.Save {
-			title, command := model.GetItem()
-			if len(title) > 0 && len(command) > 0 {
-				_, err = bmk.Save(title, command, false)
-			}
-			if err != nil {
-				log.Fatal(err)
-			}
 		}
 	case "search":
 		searchCmd.Parse(os.Args[2:])

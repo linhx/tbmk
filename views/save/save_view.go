@@ -3,20 +3,22 @@ package views_save
 import (
 	"strings"
 
+	common "linhx.com/tbmk/common"
+
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
-	color "github.com/gookit/color"
 	bookmark "linhx.com/tbmk/bookmark"
 )
 
 type Model struct {
-	focusIndex int
-	inputs     []textinput.Model
-	cursorMode textinput.CursorMode
-	err        error
-	bmk        bookmark.Bookmark
-	Save       bool
-	quit       bool
+	focusIndex          int
+	inputs              []textinput.Model
+	cursorMode          textinput.CursorMode
+	err                 error
+	bmk                 bookmark.Bookmark
+	quit                bool
+	confirmOverrideMode bool
+	confirmOverrideMsg  string
 }
 
 func (m *Model) GetItem() (string, string) {
@@ -25,20 +27,22 @@ func (m *Model) GetItem() (string, string) {
 
 func InitialModel(bmk bookmark.Bookmark, command string) Model {
 	m := Model{
-		inputs: make([]textinput.Model, 2),
-		Save:   false,
+		inputs:              make([]textinput.Model, 2),
+		confirmOverrideMode: false,
+		bmk:                 bmk,
 	}
 
 	var t textinput.Model
 	for i := range m.inputs {
 		t = textinput.New()
-		t.CharLimit = 32
 
 		switch i {
 		case 0:
+			t.CharLimit = 100
 			t.Prompt = "Title: "
 			t.Focus()
 		case 1:
+			t.CharLimit = 500
 			t.Prompt = "Command: "
 			t.SetValue(command)
 		}
@@ -53,13 +57,63 @@ func (m Model) Init() tea.Cmd {
 	return textinput.Blink
 }
 
-var (
-	highlightStyle       = color.Yellow
-	selectedStyle        = color.BgGray
-	matchedSelectedStyle = color.New(color.Yellow, color.BgGray)
-)
+/**
+ * return true if want to stay
+ */
+func (m *Model) save(override bool) (bool, error) {
+	title, command := m.GetItem()
+	if len(title) > 0 && len(command) > 0 {
+		_, err := m.bmk.Save(title, command, override)
+		_, ok := err.(*common.DuplicateBmkiError)
+		if ok {
+			m.confirmOverrideMode = true
+			m.confirmOverrideMsg = err.Error()
+			return true, nil
+		}
+		return false, err
+	}
+	return false, nil
+}
 
-func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m Model) updateOverrideMode(msg tea.Msg) (tea.Model, tea.Cmd) {
+	var err error
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "y":
+			_, err = m.save(true)
+			if err != nil {
+				m.err = err
+			}
+			m.confirmOverrideMode = false
+			m.confirmOverrideMsg = ""
+			m.quit = true
+			return m, tea.Quit
+		case "n", "ctrl+c":
+			m.confirmOverrideMode = false
+			m.confirmOverrideMsg = ""
+		}
+	case error:
+		m.err = msg
+		return m, nil
+	}
+
+	return m, nil
+}
+
+func (m *Model) updateInputs(msg tea.Msg) tea.Cmd {
+	cmds := make([]tea.Cmd, len(m.inputs))
+
+	// Only text inputs with Focus() set will respond, so it's safe to simply
+	// update all of them here without any further logic.
+	for i := range m.inputs {
+		m.inputs[i], cmds[i] = m.inputs[i].Update(msg)
+	}
+
+	return tea.Batch(cmds...)
+}
+
+func (m *Model) updateInputView(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
@@ -80,9 +134,16 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Batch(cmds...)
 
 		case "enter":
-			m.Save = true
-			m.quit = true
-			return m, tea.Quit
+			shouldStay, err := m.save(false)
+			if err != nil {
+				m.err = err
+			}
+			if shouldStay {
+				return m, nil
+			} else {
+				m.quit = true
+				return m, tea.Quit
+			}
 		// Set focus to next input
 		case "tab", "shift+tab", "up", "down":
 			s := msg.String()
@@ -121,25 +182,27 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-func (m *Model) updateInputs(msg tea.Msg) tea.Cmd {
-	cmds := make([]tea.Cmd, len(m.inputs))
-
-	// Only text inputs with Focus() set will respond, so it's safe to simply
-	// update all of them here without any further logic.
-	for i := range m.inputs {
-		m.inputs[i], cmds[i] = m.inputs[i].Update(msg)
+func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	if m.confirmOverrideMode {
+		return m.updateOverrideMode(msg)
+	} else {
+		return m.updateInputView(msg)
 	}
+}
 
-	return tea.Batch(cmds...)
+func (m Model) ConfirmOverrideView() string {
+	return m.confirmOverrideMsg + ". Do you want to update the existed item (y/n)"
 }
 
 func (m Model) View() string {
+	if m.confirmOverrideMode {
+		return m.ConfirmOverrideView()
+	}
 	if m.quit {
 		return ""
 	}
 
 	var b strings.Builder
-
 	b.WriteString("Commands bookmark\n")
 	for i := range m.inputs {
 		b.WriteString(m.inputs[i].View())

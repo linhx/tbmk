@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strconv"
 
+	common "linhx.com/tbmk/common"
+
 	"github.com/sahilm/fuzzy"
 	"github.com/sonyarouje/simdb"
 )
@@ -55,9 +57,6 @@ func (repo *BookmarkRepo) createNewBookmarkItemId() (int, error) {
 	}
 
 	var newId = increment.Index + 1
-	if err != nil {
-		return 0, fmt.Errorf("Can't create new ID")
-	}
 
 	increment.Index = newId
 	err = repo.db.Update(increment)
@@ -74,27 +73,25 @@ func (repo *BookmarkRepo) save(title string, command string, override bool) (Boo
 	var bmki BookmarkItem
 	var err error
 	var newId int
-	if override {
-		newId, err = repo.createNewBookmarkItemId()
-		if err != nil {
+	_ = repo.db.Open(BookmarkItem{}).Where("title", "=", title).First().AsEntity(&bmki)
+	if len(bmki.Id) > 0 {
+		if override {
+			bmki.Command = command
+			err = repo.db.Update(bmki)
 			return bmki, err
+		} else {
+			return bmki, common.NewDuplicateBmkiError(fmt.Sprintf("Already exist title '%s'", title), bmki.Id)
 		}
-		bmki = BookmarkItem{
-			Id:      strconv.Itoa(newId),
-			Title:   title,
-			Command: command,
+	}
+	_ = repo.db.Open(BookmarkItem{}).Where("command", "=", command).First().AsEntity(&bmki)
+	if len(bmki.Id) > 0 {
+		if override {
+			bmki.Title = title
+			err = repo.db.Update(bmki)
+			return bmki, err
+		} else {
+			return bmki, common.NewDuplicateBmkiError(fmt.Sprintf("Already exist command '%s'", command), bmki.Id)
 		}
-		err = repo.db.Open(BookmarkItem{}).Upsert(bmki)
-		return bmki, err
-	}
-
-	err = repo.db.Open(BookmarkItem{}).Where("title", "=", title).First().AsEntity(&bmki)
-	if err == nil {
-		return bmki, fmt.Errorf("Already exist title '%s'", title)
-	}
-	err = repo.db.Open(BookmarkItem{}).Where("command", "=", command).First().AsEntity(&bmki)
-	if err == nil {
-		return bmki, fmt.Errorf("Already command '%s'", command)
 	}
 
 	newId, err = repo.createNewBookmarkItemId()

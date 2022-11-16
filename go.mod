@@ -2,6 +2,8 @@ module linhx.com/tbmk
 
 go 1.19
 
+replace linhx.com/tbmk/common => ./common
+
 replace linhx.com/tbmk/bookmark => ./bookmark
 
 replace linhx.com/tbmk/views/save => ./views/save
@@ -37,4 +39,5 @@ require (
 	golang.org/x/sys v0.0.0-20220811171246-fbc7d0a398ab // indirect
 	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211 // indirect
 	golang.org/x/text v0.3.7 // indirect
+	linhx.com/tbmk/common v0.0.0-00010101000000-000000000000 // indirect
 )
