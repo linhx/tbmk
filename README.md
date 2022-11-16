@@ -15,9 +15,9 @@ A commands bookmark for terminal
 
 # How to use
 
-1. Search: type and ctrl + space
-2. Delete: in the result screen, select the item then press `ctrl+d`
-3. Add: `ctrl + t`. you can type the command first then press `ctrl+t`
+1. Search: type and `ctrl + space`
+2. Delete: in the result screen, select the item then press `ctrl + d`
+3. Add: `ctrl + t`. you can type the command first then press `ctrl + t`
 
 
 TODO
