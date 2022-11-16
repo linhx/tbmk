@@ -8,10 +8,10 @@ A commands bookmark for terminal
 - For now, it only works on Linux bash
 
 # How to install
-1. Download install file
+1. Download built file on release page
 2. Extract the file. e.g. /somepath/tbmk
 3. Run `cd /somepath/tbmk`
-4. Run `./install` will append keybinding to `~/.bashrc`
+4. Run `./install`, it will appends keybinding to `~/.bashrc`
 
 # How to use
 
