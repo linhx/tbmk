@@ -4,8 +4,8 @@ A commands bookmark for terminal
 
 ![](./tbmk.gif)
 
-# Tested on:
-- [x] Ubuntu bash
+# Worked on:
+- For now, it only works on Linux bash
 
 # How to install
 1. Download install file
