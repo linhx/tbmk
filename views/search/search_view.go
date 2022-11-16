@@ -279,5 +279,5 @@ func (m Model) View() string {
 			matchesContent += line + "\n"
 		}
 	}
-	return m.queryInput.View() + "\n" + matchesContent + "\n" + strconv.Itoa(m.firstIndex) + " " + strconv.Itoa(m.lastIndex)
+	return m.queryInput.View() + "\n" + matchesContent
 }

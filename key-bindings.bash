@@ -3,7 +3,7 @@ __tbmk_save__() {
   READLINE_POINT=0
 
   command=$(echo "${READLINE_LINE:0}" | grep -oE '(.)+$')
-  ./tbmk save -command="$command"
+  $TBMK save -command="$command"
 }
 
 __tbmk_search__() {
@@ -12,8 +12,8 @@ __tbmk_search__() {
 
   local output
   query=$(echo "${READLINE_LINE:0}" | grep -oE '(.)+$')
-  output=$(./tbmk search -query="$query")
-  READLINE_LINE=${output#*$'\t'}
+  output=$($TBMK search -query="$query")
+  READLINE_LINE=${output}
   if [[ -z "$READLINE_POINT" ]]; then
     echo "$READLINE_LINE"
   else

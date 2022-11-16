@@ -1,0 +1,12 @@
+DATA_DIR="$HOME/.tbmk"
+APP_DIR=$(pwd)
+
+SCRIPT_KEYBINDING="$APP_DIR/key-bindings.bash"
+
+if ! grep -Fqxe "export TBMK=${APP_DIR}/tbmk" ~/.bashrc ; then
+  printf "export TBMK='${APP_DIR}/tbmk'\n" >> ~/.bashrc
+  printf "export TBMK_DATA_DIR='${DATA_DIR}'\n" >> ~/.bashrc
+  printf "if [ -f '$SCRIPT_KEYBINDING' ]; then\n" >> ~/.bashrc
+  printf "    . '$SCRIPT_KEYBINDING'\n" >> ~/.bashrc
+  printf "fi\n" >> ~/.bashrc
+fi

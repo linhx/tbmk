@@ -2,6 +2,7 @@ package bookmark
 
 import (
 	"fmt"
+	"os"
 	"strconv"
 
 	common "linhx.com/tbmk/common"
@@ -39,7 +40,7 @@ type BookmarkRepo struct {
 
 func NewBookmarkRepo() (*BookmarkRepo, error) {
 	repo := new(BookmarkRepo)
-	driver, err := simdb.New("data")
+	driver, err := simdb.New(os.Getenv("TBMK_DATA_DIR"))
 	repo.db = driver
 	return repo, err
 }
@@ -50,7 +51,6 @@ func (repo *BookmarkRepo) createNewBookmarkItemId() (int, error) {
 	if err == simdb.ErrRecordNotFound {
 		increment = Increment{Name: "BookmarkItem", Index: 0}
 		err = repo.db.Insert(increment)
-		fmt.Print(increment.ID())
 	}
 	if err != nil {
 		return 0, fmt.Errorf("Can't create new ID")
