@@ -1,12 +1,34 @@
 DATA_DIR="$HOME/.tbmk"
 APP_DIR=$(pwd)
 
-SCRIPT_KEYBINDING="$APP_DIR/key-bindings.bash"
+# for bash
+FILE_BASHRC=~/.bashrc
+if [ -f "$FILE_BASHRC" ]; then
+  BASH_SCRIPT_KEYBINDING="$APP_DIR/key-bindings.bash"
 
-if ! grep -Fqxe "export TBMK=${APP_DIR}/tbmk" ~/.bashrc ; then
-  printf "export TBMK='${APP_DIR}/tbmk'\n" >> ~/.bashrc
-  printf "export TBMK_DATA_DIR='${DATA_DIR}'\n" >> ~/.bashrc
-  printf "if [ -f '$SCRIPT_KEYBINDING' ]; then\n" >> ~/.bashrc
-  printf "    . '$SCRIPT_KEYBINDING'\n" >> ~/.bashrc
-  printf "fi\n" >> ~/.bashrc
+  if ! grep -q "^export TBMK" ~/.bashrc ; then
+    printf "export TBMK='${APP_DIR}/tbmk'\n" >> ~/.bashrc
+    printf "export TBMK_DATA_DIR='${DATA_DIR}'\n" >> ~/.bashrc
+    printf "if [ -f '$BASH_SCRIPT_KEYBINDING' ]; then\n" >> ~/.bashrc
+    printf "    . '$BASH_SCRIPT_KEYBINDING'\n" >> ~/.bashrc
+    printf "fi\n" >> ~/.bashrc
+  fi
+else 
+    echo "$FILE_BASHRC does not exist."
+fi
+
+# for zsh
+FILE_ZSHRC=~/.zshrc
+if [ -f "$FILE_ZSHRC" ]; then
+  ZSH_SCRIPT_KEYBINDING="$APP_DIR/key-bindings.zsh"
+
+  if ! grep -q "^export TBMK" ~/.zshrc ; then
+    printf "export TBMK='${APP_DIR}/tbmk'\n" >> ~/.zshrc
+    printf "export TBMK_DATA_DIR='${DATA_DIR}'\n" >> ~/.zshrc
+    printf "if [ -f '$ZSH_SCRIPT_KEYBINDING' ]; then\n" >> ~/.zshrc
+    printf "    . '$ZSH_SCRIPT_KEYBINDING'\n" >> ~/.zshrc
+    printf "fi\n" >> ~/.zshrc
+  fi
+else 
+    echo "$FILE_ZSHRC does not exist."
 fi
