@@ -1,6 +1,7 @@
 package bookmark
 
 import (
+	"fmt"
 	"strconv"
 
 	"github.com/charmbracelet/bubbles/textinput"
@@ -10,22 +11,46 @@ import (
 )
 
 const MAX_DISPLAY_ITEMS int = 6
+const ITEM_HEIGHT = 2
+const HEADER_HEIGHT = 3
+
+/*
+ * Sample content of 1 item:
+ * Search:
+ * N item(s)
+ * ---------------
+ * 1. item 1
+ *  > command 1
+ */
+const MIN_WINDOW_HEIGHT = HEADER_HEIGHT + ITEM_HEIGHT // 1 search input, 1 number of item(s), 1 hr, 2 for one item
 
 type (
 	errMsg error
 )
+
+type state int
+
+const (
+	initializing state = iota
+	ready
+)
+
 type Model struct {
-	query        string
-	queryInput   textinput.Model
-	err          error
-	bmk          bookmark.Bookmark
-	matches      []bookmark.MatchedItem
-	cursor       int
-	firstIndex   int
-	lastIndex    int
-	SelectedItem bookmark.MatchedItem
-	quit         bool
-	deleteMode   bool
+	state                    state
+	query                    string
+	queryInput               textinput.Model
+	err                      error
+	bmk                      bookmark.Bookmark
+	matches                  []bookmark.MatchedItem
+	cursor                   int // index of selected item. index in `matches`
+	numberOfDisplayableItems int
+	firstIndex               int // first item index of current displayed items
+	lastIndex                int // last item index of current displayed items
+	SelectedItem             bookmark.MatchedItem
+	quit                     bool
+	deleteMode               bool
+	windowWidth              int
+	windowHeight             int
 }
 
 func InitialModel(bmk bookmark.Bookmark, query string) Model {
@@ -40,16 +65,33 @@ func InitialModel(bmk bookmark.Bookmark, query string) Model {
 	matches, _ = bmk.Search(query)
 
 	return Model{
-		query:      query,
-		queryInput: ti,
-		err:        nil,
-		bmk:        bmk,
-		cursor:     0,
-		firstIndex: 0,
-		lastIndex:  min(MAX_DISPLAY_ITEMS-1, len(matches)-1),
-		matches:    matches,
-		deleteMode: false,
+		state:                    initializing,
+		query:                    query,
+		queryInput:               ti,
+		err:                      nil,
+		bmk:                      bmk,
+		cursor:                   0,
+		numberOfDisplayableItems: 0,
+		firstIndex:               0,
+		lastIndex:                0,
+		matches:                  matches,
+		deleteMode:               false,
+		windowWidth:              0,
+		windowHeight:             0,
 	}
+}
+
+func (m *Model) init() {
+	var heightForItems = m.windowHeight - HEADER_HEIGHT
+	var newNumberOfDisplayableItems = min(heightForItems/ITEM_HEIGHT, MAX_DISPLAY_ITEMS)
+
+	m.numberOfDisplayableItems = newNumberOfDisplayableItems
+	m.lastIndex = m.numberOfDisplayableItems - 1
+}
+
+func (m *Model) reNumberOfDisplayableItems() {
+	var heightForItems = m.windowHeight - HEADER_HEIGHT
+	m.numberOfDisplayableItems = min(heightForItems/ITEM_HEIGHT, MAX_DISPLAY_ITEMS)
 }
 
 func (m *Model) reCalcCursor() {
@@ -60,7 +102,7 @@ func (m *Model) reCalcCursor() {
 	if m.lastIndex > matchesLastIndex {
 		m.lastIndex = matchesLastIndex
 	}
-	m.firstIndex = max(m.lastIndex-MAX_DISPLAY_ITEMS+1, 0)
+	m.firstIndex = max(m.lastIndex-m.numberOfDisplayableItems+1, 0)
 }
 
 func (m *Model) moveCursor(goDown bool) {
@@ -96,17 +138,17 @@ func max(a, b int) int {
 func (m *Model) setDisplayItemRange(goDown bool) {
 	if m.cursor == 0 {
 		m.firstIndex = 0
-		m.lastIndex = min(MAX_DISPLAY_ITEMS-1, len(m.matches)-1)
+		m.lastIndex = min(m.numberOfDisplayableItems-1, len(m.matches)-1)
 	} else {
 		if goDown {
 			if m.cursor > m.lastIndex {
 				m.lastIndex = m.cursor
-				m.firstIndex = max(0, m.lastIndex-MAX_DISPLAY_ITEMS+1)
+				m.firstIndex = max(0, m.lastIndex-m.numberOfDisplayableItems+1)
 			}
 		} else {
 			if m.cursor < m.firstIndex {
 				m.firstIndex = m.cursor
-				m.lastIndex = min(m.firstIndex+MAX_DISPLAY_ITEMS-1, len(m.matches)-1)
+				m.lastIndex = min(m.firstIndex+m.numberOfDisplayableItems-1, len(m.matches)-1)
 			}
 		}
 	}
@@ -206,6 +248,14 @@ func (m Model) updateSearchMode(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		m.windowWidth, m.windowHeight = msg.Width, msg.Height
+		m.state = ready
+		m.reNumberOfDisplayableItems()
+		m.resetCursor()
+	}
+
 	if m.deleteMode {
 		return m.updateDeleteMode(msg)
 	} else {
@@ -218,19 +268,25 @@ func (m Model) DeleteView() string {
 }
 
 func (m Model) View() string {
+	if m.state == initializing {
+		return "..."
+	}
+	if m.windowHeight < MIN_WINDOW_HEIGHT {
+		return "Window height is not enough to display"
+	}
 	if m.deleteMode {
 		return m.DeleteView()
 	}
 	if m.quit {
 		return ""
 	}
-	var matchesContent = strconv.Itoa(len(m.matches)) + " item(s)\n\n"
+	var matchesContent = strconv.Itoa(len(m.matches)) + " item(s)\n----------"
 	if len(m.matches) > 0 {
 		// TODO refactor check if empty MatchedIndexes then don't need to format each char
 		for i := m.firstIndex; i <= m.lastIndex; i++ {
 			match := m.matches[i]
 			isSelected := m.cursor == i
-			var line = ""
+			var line = "\n"
 			if isSelected {
 				line += selectedStyle.Render(strconv.Itoa(i+1) + ". ")
 			} else {
@@ -276,8 +332,8 @@ func (m Model) View() string {
 					}
 				}
 			}
-			matchesContent += line + "\n"
+			matchesContent += line
 		}
 	}
-	return m.queryInput.View() + "\n" + matchesContent
+	return fmt.Sprintf("%s\n%s", m.queryInput.View(), matchesContent)
 }

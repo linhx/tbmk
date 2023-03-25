@@ -12,7 +12,7 @@ import (
 	searchView "linhx.com/tbmk/views/search"
 )
 
-func NewCancelationSignal() (func(), func()) {
+func NewCancellationSignal() (func(), func()) {
 	canceled := false
 
 	cancel := func() {
@@ -28,7 +28,7 @@ func NewCancelationSignal() (func(), func()) {
 }
 
 func main() {
-	_, exit := NewCancelationSignal()
+	_, exit := NewCancellationSignal()
 	defer exit()
 	saveCmd := flag.NewFlagSet("save", flag.ExitOnError)
 	saveCommand := saveCmd.String("command", "", "command")
