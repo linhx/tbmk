@@ -26,3 +26,11 @@ TODO
 
 - [ ] Windows
 - [ ] Mac
+
+## Develop
+
+### Build
+
+```shell
+go build .
+```
