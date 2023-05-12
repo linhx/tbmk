@@ -21,6 +21,9 @@ A commands bookmark for terminal
 1. Search: type and `ctrl + space`
 2. Delete: in the result screen, select the item then press `ctrl + d`
 3. Add: `ctrl + t`. you can type the command first then press `ctrl + t`
+4. Edit: Override the old one by add new command with the same title.
+
+The data are stored in `~/.tbmk/BookmarkItem`. You can backup or edit it directly.
 
 TODO
 
