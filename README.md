@@ -14,7 +14,7 @@ A commands bookmark for terminal
 1. Download built file on release page
 2. Extract the file. e.g. /somepath/tbmk
 3. Run `cd /somepath/tbmk`
-4. Run `./install`, it will appends keybinding to `~/.bashrc` and `~/.zsh`
+4. Run `./install` (don't install by execute `absolute-path/install`), it will appends keybinding to `~/.bashrc` and `~/.zsh`
 
 ## How to use
 
@@ -23,7 +23,7 @@ A commands bookmark for terminal
 3. Add: `ctrl + t`. you can type the command first then press `ctrl + t`
 4. Edit: Override the old one by add new command with the same title.
 
-The data are stored in `~/.tbmk/BookmarkItem`. You can backup or edit it directly.
+The data are stored in `~/.tbmk`. You can backup or edit it directly.
 
 TODO
 
