@@ -3,24 +3,13 @@ package bookmark
 import (
 	"fmt"
 	"os"
-	"strconv"
 
 	common "linhx.com/tbmk/common"
 
 	"github.com/sahilm/fuzzy"
 	"github.com/sonyarouje/simdb"
+	"github.com/google/uuid"
 )
-
-type Increment struct {
-	Name  string `json:"name"`
-	Index int    `json:"index"`
-}
-
-func (increment Increment) ID() (jsonField string, value interface{}) {
-	value = increment.Name
-	jsonField = "name"
-	return
-}
 
 type BookmarkItem struct {
 	Id      string `json:"id"`
@@ -45,22 +34,8 @@ func NewBookmarkRepo() (*BookmarkRepo, error) {
 	return repo, err
 }
 
-func (repo *BookmarkRepo) createNewBookmarkItemId() (int, error) {
-	var increment Increment
-	err := repo.db.Open(Increment{}).Where("name", "=", "BookmarkItem").First().AsEntity(&increment)
-	if err == simdb.ErrRecordNotFound {
-		increment = Increment{Name: "BookmarkItem", Index: 0}
-		err = repo.db.Insert(increment)
-	}
-	if err != nil {
-		return 0, fmt.Errorf("Can't create new ID")
-	}
-
-	var newId = increment.Index + 1
-
-	increment.Index = newId
-	err = repo.db.Update(increment)
-	return newId, err
+func (repo *BookmarkRepo) createNewBookmarkItemId() (string) {
+	return uuid.New().String()
 }
 
 func (repo *BookmarkRepo) getAllBookmarkItems() ([]BookmarkItem, error) {
@@ -72,7 +47,7 @@ func (repo *BookmarkRepo) getAllBookmarkItems() ([]BookmarkItem, error) {
 func (repo *BookmarkRepo) save(title string, command string, override bool) (BookmarkItem, error) {
 	var bmki BookmarkItem
 	var err error
-	var newId int
+	var newId string
 	_ = repo.db.Open(BookmarkItem{}).Where("title", "=", title).First().AsEntity(&bmki)
 	if len(bmki.Id) > 0 {
 		if override {
@@ -94,12 +69,9 @@ func (repo *BookmarkRepo) save(title string, command string, override bool) (Boo
 		}
 	}
 
-	newId, err = repo.createNewBookmarkItemId()
-	if err != nil {
-		return bmki, err
-	}
+	newId = repo.createNewBookmarkItemId()
 	bmki = BookmarkItem{
-		Id:      strconv.Itoa(newId),
+		Id:      newId,
 		Title:   title,
 		Command: command,
 	}
