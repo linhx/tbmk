@@ -8,6 +8,7 @@ A commands bookmark for terminal
 
 - Linux bash
 - Linux zsh
+- Mac zsh
 
 ## How to install
 
@@ -28,7 +29,6 @@ The data are stored in `~/.tbmk`. You can backup or edit it directly.
 TODO
 
 - [ ] Windows
-- [ ] Mac
 
 ## Develop
 
