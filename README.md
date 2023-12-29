@@ -1,8 +1,8 @@
-# Tbmk - Terminal bookmarker
+# Tbmk - Terminal Bookmarker
 
 A commands bookmark for terminal
 
-![demo](./tbmk.gif)
+![Demo](./tbmk.gif)
 
 ## Worked on
 
@@ -10,30 +10,33 @@ A commands bookmark for terminal
 - Linux zsh
 - Mac zsh
 
-## How to install
+## Installation
 
-1. Download built file on release page
-2. Extract the file. e.g. /somepath/tbmk
-3. Run `cd /somepath/tbmk`
-4. Run `./install` (don't install by execute `absolute-path/install`), it will appends keybinding to `~/.bashrc` and `~/.zsh`
+1. Download latest version from the [release page](https://github.com/linhx/tbmk/releases).
+2. Extract the file, e.g., `unzip tbmk*.zip`.
+3. Run `cd tbmk-VERSION`.
+4. Run `./install` (avoid using `absolute-path/install`). It will add keybindings to `~/.bashrc` and `~/.zsh`.
 
-## How to use
+## Usage
 
-1. Search: type and `ctrl + space`
-2. Delete: in the result screen, select the item then press `ctrl + d`
-3. Add: `ctrl + t`. you can type the command first then press `ctrl + t`
-4. Edit: Override the old one by add new command with the same title.
+1. **Search:** Type and hit `ctrl + space`.
+2. **Delete:** In the result screen, select the item and press `ctrl + d`.
+3. **Add:** Press `ctrl + t`. You can type the command first and then press `ctrl + t`.
+4. **Edit:** Override the old one by adding a new command with the same title.
 
-The data are stored in `~/.tbmk`. You can backup or edit it directly.
+Data is stored in `~/.tbmk`. Feel free to backup or edit it directly.
 
-TODO
+**TODO:**
 
-- [ ] Windows
+- [ ] Windows support
 
-## Develop
+## Development
 
 ### Build
 
 ```shell
+git clone https://github.com/linhx/tbmk.git
+cd tbmk
 go build .
+./install
 ```
