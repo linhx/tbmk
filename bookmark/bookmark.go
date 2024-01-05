@@ -2,13 +2,16 @@ package bookmark
 
 import (
 	"fmt"
+	"strings"
 	"os"
+	"path/filepath"
 
 	common "linhx.com/tbmk/common"
 
 	"github.com/sahilm/fuzzy"
 	"github.com/sonyarouje/simdb"
 	"github.com/google/uuid"
+	"github.com/spf13/viper"
 )
 
 type BookmarkItem struct {
@@ -27,9 +30,17 @@ type BookmarkRepo struct {
 	db *simdb.Driver
 }
 
+func getAbsolutePath(path string) string {
+	if strings.HasPrefix(path, "~/") {
+		home, _ := os.UserHomeDir()
+		return filepath.Join(home, path[2:])
+	}
+	return path
+}
+
 func NewBookmarkRepo() (*BookmarkRepo, error) {
 	repo := new(BookmarkRepo)
-	driver, err := simdb.New(os.Getenv("TBMK_DATA_DIR"))
+	driver, err := simdb.New(getAbsolutePath(viper.GetString("tbmk.dataDir")))
 	repo.db = driver
 	return repo, err
 }

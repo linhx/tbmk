@@ -15,7 +15,7 @@ A commands bookmark for terminal
 1. Download built file on release page
 2. Extract the file. e.g. /somepath/tbmk
 3. Run `cd /somepath/tbmk`
-4. Run `./install` (don't install by execute `absolute-path/install`), it will appends keybinding to `~/.bashrc` and `~/.zsh`
+4. Run `./install` (don't install by execute `/absolute-path/install`), it will appends keybinding to `~/.bashrc`, `~/.zsh` and `~/.config/fish/config.fish`
 
 ## How to use
 
@@ -30,7 +30,13 @@ TODO
 
 - [ ] Windows
 
-## Develop
+## Development
+
+### Run
+
+```shell
+APP_ENV=dev go run .
+```
 
 ### Build
 
