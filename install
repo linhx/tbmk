@@ -1,34 +1,69 @@
+#!/usr/bin/env bash
+
 DATA_DIR="$HOME/.tbmk"
+mkdir -p $DATA_DIR
+
 APP_DIR=$(pwd)
+echo "Create symlink /usr/local/bin/tbmk"
+sudo ln -sf "$APP_DIR/tbmk" /usr/local/bin/tbmk
 
 # for bash
 FILE_BASHRC=~/.bashrc
 if [ -f "$FILE_BASHRC" ]; then
-  BASH_SCRIPT_KEYBINDING="$APP_DIR/key-bindings.bash"
-
-  if ! grep -q "^export TBMK" ~/.bashrc ; then
-    printf "export TBMK='${APP_DIR}/tbmk'\n" >> ~/.bashrc
-    printf "export TBMK_DATA_DIR='${DATA_DIR}'\n" >> ~/.bashrc
-    printf "if [ -f '$BASH_SCRIPT_KEYBINDING' ]; then\n" >> ~/.bashrc
-    printf "    . '$BASH_SCRIPT_KEYBINDING'\n" >> ~/.bashrc
-    printf "fi\n" >> ~/.bashrc
+  BASH_SCRIPT_KEYBINDING="$APP_DIR/shell/key-bindings.bash"
+  RC_FILE="$DATA_DIR/.bash"
+  tee $RC_FILE > /dev/null <<EOT
+if [ -f '$BASH_SCRIPT_KEYBINDING' ]; then
+. '$BASH_SCRIPT_KEYBINDING'
+fi
+EOT
+  SOURCE_STR="[ -f $RC_FILE ] && source $RC_FILE"
+  SOURCE_STR_ESCAPED=$(echo $SOURCE_STR | sed 's/[][\\.*^$\-\/]/\\&/g')
+  if ! grep -q "^$SOURCE_STR_ESCAPED" $FILE_BASHRC ; then
+    printf "\n$SOURCE_STR" >> $FILE_BASHRC
   fi
-else 
-    echo "$FILE_BASHRC does not exist."
+else
+  echo "warn: $FILE_BASHRC does not exist."
 fi
 
 # for zsh
 FILE_ZSHRC=~/.zshrc
 if [ -f "$FILE_ZSHRC" ]; then
-  ZSH_SCRIPT_KEYBINDING="$APP_DIR/key-bindings.zsh"
-
-  if ! grep -q "^export TBMK" ~/.zshrc ; then
-    printf "export TBMK='${APP_DIR}/tbmk'\n" >> ~/.zshrc
-    printf "export TBMK_DATA_DIR='${DATA_DIR}'\n" >> ~/.zshrc
-    printf "if [ -f '$ZSH_SCRIPT_KEYBINDING' ]; then\n" >> ~/.zshrc
-    printf "    . '$ZSH_SCRIPT_KEYBINDING'\n" >> ~/.zshrc
-    printf "fi\n" >> ~/.zshrc
+  ZSH_SCRIPT_KEYBINDING="$APP_DIR/shell/key-bindings.zsh"
+  RC_FILE="$DATA_DIR/.zsh"
+  tee $RC_FILE > /dev/null <<EOT
+if [ -f '$BASH_SCRIPT_KEYBINDING' ]; then
+. '$BASH_SCRIPT_KEYBINDING'
+fi
+EOT
+  SOURCE_STR="[ -f $RC_FILE ] && source $RC_FILE"
+  SOURCE_STR_ESCAPED=$(echo $SOURCE_STR | sed 's/[][\\.*^$\-\/]/\\&/g')
+  if ! grep -q "^$SOURCE_STR_ESCAPED" $FILE_ZSHRC ; then
+    printf "\n$SOURCE_STR" >> $FILE_ZSHRC
   fi
 else 
-    echo "$FILE_ZSHRC does not exist."
+  echo "warn: $FILE_ZSHRC does not exist."
 fi
+
+# for fish
+FILE_FISHRC=~/.config/fish/config.fish
+if [ -f "$FILE_FISHRC" ]; then
+  FISH_SCRIPT_KEYBINDING="$APP_DIR/shell/key-bindings.fish"
+  RC_FILE="$DATA_DIR/.fish"
+  tee $RC_FILE > /dev/null <<EOT
+if test -e $FISH_SCRIPT_KEYBINDING
+. "$FISH_SCRIPT_KEYBINDING"
+end
+EOT
+
+  SOURCE_STR="if test -f $RC_FILE; source $RC_FILE; end"
+  SOURCE_STR_ESCAPED=$(echo $SOURCE_STR | sed 's/[][\\.*^$\-\/]/\\&/g')
+  if ! grep -q "^$SOURCE_STR_ESCAPED" $FILE_FISHRC ; then
+    printf "\n$SOURCE_STR" >> $FILE_FISHRC
+  fi
+else 
+    echo "warn: $FILE_FISHRC does not exist."
+fi
+
+echo 'Installation done.'
+echo 'Restart your shell or reload config file.'

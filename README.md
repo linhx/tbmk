@@ -6,8 +6,7 @@ A commands bookmark for terminal
 
 ## Worked on
 
-- Linux bash
-- Linux zsh
+- Linux: bash, zsh, fish
 - Mac zsh
 
 ## How to install
@@ -15,7 +14,11 @@ A commands bookmark for terminal
 1. Download built file on release page
 2. Extract the file. e.g. /somepath/tbmk
 3. Run `cd /somepath/tbmk`
-4. Run `./install` (don't install by execute `absolute-path/install`), it will appends keybinding to `~/.bashrc` and `~/.zsh`
+4. Run `./install` (don't install by execute `/absolute-path/install`), it will appends keybinding to `~/.bashrc`, `~/.zsh` and `~/.config/fish/config.fish`
+5. Restart your shell or reload config file:
+    - `source ~/.bashrc # bash`
+    - `source ~/.zshrc # zsh`
+    - `source ~/.config/fish/config.fish #fish`
 
 ## How to use
 
@@ -30,7 +33,13 @@ TODO
 
 - [ ] Windows
 
-## Develop
+## Development
+
+### Run
+
+```shell
+APP_ENV=dev go run .
+```
 
 ### Build
 

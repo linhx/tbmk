@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+
+DATA_DIR="$HOME/.tbmk"
+
+echo "rm /usr/local/bin/tbmk"
+sudo rm /usr/local/bin/tbmk
+
+# for bash
+FILE_BASHRC=~/.bashrc
+if [ -f "$FILE_BASHRC" ]; then
+  RC_FILE="$DATA_DIR/.bash"
+  SOURCE_STR=$(echo "[ -f $RC_FILE ] && source $RC_FILE" | sed 's/[][\\.*^$\-\/]/\\&/g')
+  sed -i "/^$SOURCE_STR/d" $FILE_BASHRC
+else
+  echo "warn: $FILE_BASHRC does not exist."
+fi
+
+# for zsh
+FILE_ZSHRC=~/.zshrc
+if [ -f "$FILE_ZSHRC" ]; then
+  RC_FILE="$DATA_DIR/.zsh"
+  SOURCE_STR=$(echo "[ -f $RC_FILE ] && source $RC_FILE" | sed 's/[][\\.*^$\-\/]/\\&/g')
+  sed -i "/^$SOURCE_STR/d" $FILE_ZSHRC
+else
+  echo "warn: $FILE_ZSHRC does not exist."
+fi
+
+# for fish
+FILE_FISHRC=~/.config/fish/config.fish
+if [ -f "$FILE_FISHRC" ]; then
+  RC_FILE="$DATA_DIR/.fish"
+  SOURCE_STR=$(echo "if test -f $RC_FILE; source $RC_FILE; end" | sed 's/[][\\.*^$\-\/]/\\&/g')
+  sed -i "/^$SOURCE_STR/d" $FILE_FISHRC
+fi
+
+echo "uninstall done"
