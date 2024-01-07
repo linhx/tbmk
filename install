@@ -5,7 +5,7 @@ mkdir -p $DATA_DIR
 
 APP_DIR=$(pwd)
 echo "Create symlink /usr/local/bin/tbmk"
-sudo ln -s "$APP_DIR/tbmk" /usr/local/bin/tbmk
+sudo ln -sf "$APP_DIR/tbmk" /usr/local/bin/tbmk
 
 # for bash
 FILE_BASHRC=~/.bashrc
