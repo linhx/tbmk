@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/spf13/viper"
 	"linhx.com/tbmk/bookmark"
 	saveView "linhx.com/tbmk/views/save"
 	searchView "linhx.com/tbmk/views/search"
@@ -27,9 +29,28 @@ func NewCancellationSignal() (func(), func()) {
 	return cancel, exit
 }
 
+
+func getAppDir() string {
+	if os.Getenv("APP_ENV") == "dev" {
+		return "."
+	}
+	path, err := os.Executable()
+	if err != nil {
+		panic(fmt.Errorf("Cannot get executable: %w", err))
+	}
+	return filepath.Dir(path);
+}
+
 func main() {
 	_, exit := NewCancellationSignal()
 	defer exit()
+	viper.AddConfigPath(getAppDir())
+	viper.SetConfigName("config");
+	viper.SetDefault("tbmk.dataDir", "./data")
+	err := viper.ReadInConfig()
+	if err != nil {
+		panic(fmt.Errorf("fatal error config file: %w", err))
+	}
 	saveCmd := flag.NewFlagSet("save", flag.ExitOnError)
 	saveCommand := saveCmd.String("command", "", "command")
 
@@ -39,6 +60,7 @@ func main() {
 	if len(os.Args) < 2 {
 		fmt.Println("expected 'save' or 'search' subcommands")
 		exit()
+		return
 	}
 
 	bmk, err := bookmark.NewBookmark()
