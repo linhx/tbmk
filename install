@@ -20,7 +20,7 @@ EOT
   SOURCE_STR="[ -f $RC_FILE ] && source $RC_FILE"
   SOURCE_STR_ESCAPED=$(echo $SOURCE_STR | sed 's/[][\\.*^$\-\/]/\\&/g')
   if ! grep -q "^$SOURCE_STR_ESCAPED" $FILE_BASHRC ; then
-    printf "\n$SOURCE_STR\n" >> $FILE_BASHRC
+    printf "\n$SOURCE_STR" >> $FILE_BASHRC
   fi
 else
   echo "warn: $FILE_BASHRC does not exist."
@@ -39,7 +39,7 @@ EOT
   SOURCE_STR="[ -f $RC_FILE ] && source $RC_FILE"
   SOURCE_STR_ESCAPED=$(echo $SOURCE_STR | sed 's/[][\\.*^$\-\/]/\\&/g')
   if ! grep -q "^$SOURCE_STR_ESCAPED" $FILE_ZSHRC ; then
-    printf "\n$SOURCE_STR\n" >> $FILE_ZSHRC
+    printf "\n$SOURCE_STR" >> $FILE_ZSHRC
   fi
 else 
   echo "warn: $FILE_ZSHRC does not exist."
@@ -59,8 +59,11 @@ EOT
   SOURCE_STR="if test -f $RC_FILE; source $RC_FILE; end"
   SOURCE_STR_ESCAPED=$(echo $SOURCE_STR | sed 's/[][\\.*^$\-\/]/\\&/g')
   if ! grep -q "^$SOURCE_STR_ESCAPED" $FILE_FISHRC ; then
-    printf "\n$SOURCE_STR\n" >> $FILE_FISHRC
+    printf "\n$SOURCE_STR" >> $FILE_FISHRC
   fi
 else 
     echo "warn: $FILE_FISHRC does not exist."
 fi
+
+echo 'Installation done.'
+echo 'Restart your shell or reload config file.'
