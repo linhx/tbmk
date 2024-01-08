@@ -38,7 +38,11 @@ func getAppDir() string {
 	if err != nil {
 		panic(fmt.Errorf("Cannot get executable: %w", err))
 	}
-	return filepath.Dir(path);
+	realPath, err := filepath.EvalSymlinks(path)
+	if err != nil {
+		panic(fmt.Errorf("Cannot get real path from symlink: %w", err))
+	}
+	return filepath.Dir(realPath);
 }
 
 func main() {
