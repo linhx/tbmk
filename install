@@ -32,8 +32,8 @@ if [ -f "$FILE_ZSHRC" ]; then
   ZSH_SCRIPT_KEYBINDING="$APP_DIR/shell/key-bindings.zsh"
   RC_FILE="$DATA_DIR/.zsh"
   tee $RC_FILE > /dev/null <<EOT
-if [ -f '$BASH_SCRIPT_KEYBINDING' ]; then
-. '$BASH_SCRIPT_KEYBINDING'
+if [ -f '$ZSH_SCRIPT_KEYBINDING' ]; then
+. '$ZSH_SCRIPT_KEYBINDING'
 fi
 EOT
   SOURCE_STR="[ -f $RC_FILE ] && source $RC_FILE"
