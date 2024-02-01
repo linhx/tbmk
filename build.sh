@@ -13,7 +13,7 @@ do
     output_name=$package_name'-'$GOOS'-'$GOARCH
     output_path="$output_dir/$output_name"
 
-    env GOOS=$GOOS GOARCH=$GOARCH go build -o $output_path .
+    env CGO_ENABLED=0 GOOS=$GOOS GOARCH=$GOARCH go build -o $output_path .
     if [ $? -ne 0 ]; then
         echo 'An error has occurred! Aborting the script execution...'
         exit 1
