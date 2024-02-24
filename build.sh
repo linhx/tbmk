@@ -19,6 +19,6 @@ do
         exit 1
     fi
     chmod +x $output_path
-    tar -cvzf "$output_path.tar.xz" --transform="s/$output_dir\/$output_name/$package_name/" "$output_path" install uninstall shell config.yaml
+    tar -cvzf "$output_path.tar.gz" --transform="s/$output_dir\/$output_name/$package_name/" "$output_path" install uninstall shell config.yaml
     rm $output_path
 done
