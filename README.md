@@ -1,5 +1,7 @@
 # Tbmk - Terminal bookmarker
 
+![](https://github.com/linhx/tbmk/actions/workflows/go.yml/badge.svg)
+
 A commands bookmark for terminal
 
 ![demo](./tbmk.gif)
