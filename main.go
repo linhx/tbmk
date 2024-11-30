@@ -10,6 +10,8 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/spf13/viper"
 	"linhx.com/tbmk/bookmark"
+	"linhx.com/tbmk/common"
+	inputVariableView "linhx.com/tbmk/views/inputvariables"
 	saveView "linhx.com/tbmk/views/save"
 	searchView "linhx.com/tbmk/views/search"
 )
@@ -28,7 +30,6 @@ func NewCancellationSignal() (func(), func()) {
 
 	return cancel, exit
 }
-
 
 func getAppDir() string {
 	if os.Getenv("APP_ENV") == "dev" {

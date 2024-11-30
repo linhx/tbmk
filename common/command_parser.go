@@ -42,7 +42,7 @@ func TokensParser(tmplStr string) []Token {
 		previousIndex = match[1]
 	}
 	if previousIndex < len(tmplStr) {
-		var token = Token{IsVariable: false, Value: tmplStr[previousIndex:len(tmplStr)], Raw: tmplStr[previousIndex:len(tmplStr)]}
+		var token = Token{IsVariable: false, Value: tmplStr[previousIndex:], Raw: tmplStr[previousIndex:]}
 		tokens = append(tokens, token)
 	}
 
