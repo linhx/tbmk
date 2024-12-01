@@ -27,22 +27,27 @@ type (
 	errMsg error
 )
 
+var titleStyle = lipgloss.NewStyle().Background(lipgloss.Color("148")).Foreground(lipgloss.Color("236"))
+
+// TODO refactor Model structure
 type Model struct {
-	tokens             []common.Token
-	focusTokenIndex    int
-	variableInputs     map[int]VariableInputModel
-	focusVariableInput *VariableInputModel
-	err                error
-	Quit               bool
-	Cancel             bool
-	windowWidth        int
-	windowHeight       int
+	tokens                  []common.Token
+	focusTokenIndex         int
+	variableInputs          map[int]VariableInputModel
+	focusVariableInputIndex int
+	focusVariableInput      *VariableInputModel
+	err                     error
+	Quit                    bool
+	Cancel                  bool
+	windowWidth             int
+	windowHeight            int
 }
 
 func InitialModel(command string, windowWidth int, windowHeight int) Model {
 	tokens := common.TokensParser(command)
 	variableInputs := make(map[int]VariableInputModel)
 	focusTokenIndex := -1
+	focusVariableInputIndex := -1
 	var focusVariableInput VariableInputModel
 	for i := 0; i < len(tokens); i++ {
 		token := tokens[i]
@@ -52,18 +57,20 @@ func InitialModel(command string, windowWidth int, windowHeight int) Model {
 				focusTokenIndex = i
 				variableInput.Focus()
 				focusVariableInput = variableInput
+				focusVariableInputIndex = 0
 			}
 			variableInputs[token.Id] = variableInput
 		}
 	}
 	return Model{
-		err:                nil,
-		tokens:             tokens,
-		variableInputs:     variableInputs,
-		focusTokenIndex:    focusTokenIndex,
-		focusVariableInput: &focusVariableInput,
-		windowWidth:        windowWidth,
-		windowHeight:       windowHeight,
+		err:                     nil,
+		tokens:                  tokens,
+		variableInputs:          variableInputs,
+		focusVariableInputIndex: focusVariableInputIndex,
+		focusTokenIndex:         focusTokenIndex,
+		focusVariableInput:      &focusVariableInput,
+		windowWidth:             windowWidth,
+		windowHeight:            windowHeight,
 	}
 }
 
@@ -146,6 +153,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		case tea.KeyTab:
 			for i := m.focusTokenIndex + 1; i < len(m.tokens); i++ {
 				if m.tokens[i].IsVariable {
+					m.focusVariableInputIndex++
 					return m, m.changeFocusInput(msg, i)
 				}
 			}
@@ -155,6 +163,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			}
 			for i := m.focusTokenIndex - 1; i > -1; i-- {
 				if m.tokens[i].IsVariable {
+					m.focusVariableInputIndex--
 					return m, m.changeFocusInput(msg, i)
 				}
 			}
@@ -178,6 +187,42 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	return m, nil
 }
 
+func removeFirstNLines(input string, n int) string {
+	if n < 1 {
+		return input
+	}
+	lineCount := 0
+	for i := 0; i < len(input); i++ {
+		if input[i] == '\n' {
+			lineCount++
+			if lineCount == n {
+				return input[i+1:]
+			}
+		}
+	}
+	return ""
+}
+
+func (m Model) getLineNumberOfVariableToken(token common.Token) int {
+	var content string
+	for _, _token := range m.tokens {
+		if _token == token {
+			content += "."
+			break
+		}
+		content += _token.Value
+	}
+
+	renderStr := lipgloss.NewStyle().Width(m.windowWidth - 2).Render(content)
+	count := 0
+	for _, char := range renderStr {
+		if char == '\n' {
+			count++
+		}
+	}
+	return count
+}
+
 func (m Model) View() string {
 	var str string
 	for _, token := range m.tokens {
@@ -188,5 +233,8 @@ func (m Model) View() string {
 		}
 	}
 	style := lipgloss.NewStyle().Width(m.windowWidth - 2) // wrap text
-	return style.Render(str)
+	str = style.Render(str)
+	var totalVariables = len(m.variableInputs)
+	numOfVariables := titleStyle.Render(fmt.Sprintf("Variables: %d/%d", m.focusVariableInputIndex+1, totalVariables))
+	return numOfVariables + "\n" + style.MaxHeight(5).Render(removeFirstNLines(str, m.getLineNumberOfVariableToken(m.tokens[m.focusTokenIndex])-1))
 }
