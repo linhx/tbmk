@@ -102,6 +102,10 @@ func (m *Model) reNumberOfDisplayableItems() {
 	m.numberOfDisplayableItems = min(heightForItems/ITEM_HEIGHT, MAX_DISPLAY_ITEMS)
 }
 
+func (m Model) getContentHeight() int {
+	return m.numberOfDisplayableItems * ITEM_HEIGHT
+}
+
 func (m *Model) reCalcCursor() {
 	matchesLastIndex := len(m.matches) - 1
 	if m.cursor >= matchesLastIndex {
@@ -180,6 +184,9 @@ var (
 	selectedStyle        = color.BgGray
 	matchedSelectedStyle = color.New(color.Yellow, color.BgGray)
 	ellipsisStyle        = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
+	listCommandsStyle    = lipgloss.NewStyle().Width(20).Border(lipgloss.NormalBorder(), false, true, false, false).BorderForeground(lipgloss.Color("69"))
+	previewCommandStyle  = lipgloss.NewStyle().Width(20)
+	previewTitleStyle    = lipgloss.NewStyle().Background(lipgloss.Color("148")).Foreground(lipgloss.Color("236"))
 )
 
 func (m Model) updateDeleteMode(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -287,6 +294,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.state = ready
 		m.reNumberOfDisplayableItems()
 		m.resetCursor()
+		contentHeight := m.getContentHeight()
+		listCommandsStyle = listCommandsStyle.MaxHeight(contentHeight).Width((m.windowWidth / 5) * 2)
+		previewCommandStyle = previewCommandStyle.MaxHeight(contentHeight).Width(m.windowWidth - listCommandsStyle.GetWidth())
 	}
 
 	switch m.activateMode {
@@ -321,12 +331,17 @@ func (m Model) View() string {
 		return ""
 	}
 	var matchesContent = strconv.Itoa(len(m.matches)) + " item(s)\n----------"
+	var content string
 	if len(m.matches) > 0 {
 		// TODO refactor check if empty MatchedIndexes then don't need to format each char
+		listCommandsContent := ""
 		for i := m.firstIndex; i <= m.lastIndex; i++ {
 			match := m.matches[i]
 			isSelected := m.cursor == i
 			var line = "\n"
+			if i == m.firstIndex {
+				line = ""
+			}
 			if isSelected {
 				line += selectedStyle.Render(strconv.Itoa(i+1) + ". ")
 			} else {
@@ -357,7 +372,7 @@ func (m Model) View() string {
 			}
 			// format command
 			_matchCommand := match.MatchCommand
-			truncatedCommand, isTruncated := common.TruncateWithEllipsis(match.Command, m.windowWidth)
+			truncatedCommand, isTruncated := common.TruncateWithEllipsis(match.Command, listCommandsStyle.GetWidth())
 			for j := 0; j < len(truncatedCommand); j++ {
 				if isSelected {
 					if contains(j, _matchCommand.MatchedIndexes) {
@@ -380,8 +395,12 @@ func (m Model) View() string {
 					line += ellipsisStyle.Render(common.ELLIPSIS)
 				}
 			}
-			matchesContent += line
+			listCommandsContent += line
 		}
+
+		selectedCommandStr := m.matches[m.cursor].Command
+
+		content = lipgloss.JoinHorizontal(lipgloss.Top, listCommandsStyle.Render(listCommandsContent), previewCommandStyle.Render(previewTitleStyle.Render(" Preview ")+"\n"+selectedCommandStr))
 	}
-	return fmt.Sprintf("%s\n%s", m.queryInput.View(), matchesContent)
+	return fmt.Sprintf("%s\n%s\n%s", m.queryInput.View(), matchesContent, content)
 }
