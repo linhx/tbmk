@@ -1,4 +1,4 @@
-module linhx.com/tbmk/views/inputvariables
+module linhx.com/tbmk/views/variableinputs
 
 replace linhx.com/tbmk/common => ../../common
 

@@ -8,6 +8,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	color "github.com/gookit/color"
 	bookmark "linhx.com/tbmk/bookmark"
+	variableinputs "linhx.com/tbmk/views/variableinputs"
 )
 
 const MAX_DISPLAY_ITEMS int = 6
@@ -31,8 +32,11 @@ type (
 type state int
 
 const (
-	initializing state = iota
-	ready
+	initializing         state  = 0
+	ready                state  = 1
+	SEARCH_MODE          string = "SEARCH"
+	DELETE_MODE          string = "DELETE"
+	INPUT_VARIABLES_MODE string = "VARIABLES"
 )
 
 type Model struct {
@@ -47,10 +51,12 @@ type Model struct {
 	firstIndex               int // first item index of current displayed items
 	lastIndex                int // last item index of current displayed items
 	SelectedItem             bookmark.MatchedItem
+	OutputCommand            string
 	quit                     bool
-	deleteMode               bool
 	windowWidth              int
 	windowHeight             int
+	activateMode             string
+	variablesInputView       *variableinputs.Model
 }
 
 func InitialModel(bmk bookmark.Bookmark, query string) Model {
@@ -66,6 +72,7 @@ func InitialModel(bmk bookmark.Bookmark, query string) Model {
 
 	return Model{
 		state:                    initializing,
+		activateMode:             SEARCH_MODE,
 		query:                    query,
 		queryInput:               ti,
 		err:                      nil,
@@ -75,7 +82,6 @@ func InitialModel(bmk bookmark.Bookmark, query string) Model {
 		firstIndex:               0,
 		lastIndex:                0,
 		matches:                  matches,
-		deleteMode:               false,
 		windowWidth:              0,
 		windowHeight:             0,
 	}
@@ -182,9 +188,9 @@ func (m Model) updateDeleteMode(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.bmk.Remove(m.matches[m.cursor].Id)
 			m.matches, err = m.bmk.Search(m.query)
 			m.reCalcCursor()
-			m.deleteMode = false
+			m.activateMode = SEARCH_MODE
 		case "n", "ctrl+c":
-			m.deleteMode = false
+			m.activateMode = SEARCH_MODE
 		}
 	case errMsg:
 		m.err = msg
@@ -217,6 +223,12 @@ func (m Model) updateSearchMode(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case tea.KeyEnter:
 			if len(m.matches) > 0 {
 				m.SelectedItem = m.matches[m.cursor]
+				// open variables input view
+				variablesInput := variableinputs.InitialModel(m.SelectedItem.Command, m.windowWidth, m.windowHeight)
+				m.variablesInputView = &variablesInput
+				m.activateMode = INPUT_VARIABLES_MODE
+
+				return m.updateInputVariablesMode(nil) // avoid escalate KeyEnter to variableinputs_view
 			}
 			m.quit = true
 			return m, tea.Quit
@@ -224,7 +236,7 @@ func (m Model) updateSearchMode(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.quit = true
 			return m, tea.Quit
 		case tea.KeyCtrlD:
-			m.deleteMode = true
+			m.activateMode = DELETE_MODE
 			return m, cmd
 		}
 
@@ -247,6 +259,24 @@ func (m Model) updateSearchMode(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
+func (m Model) updateInputVariablesMode(msg tea.Msg) (tea.Model, tea.Cmd) {
+	variablesInputView := *m.variablesInputView
+	variablesInputView, _ = variablesInputView.Update(msg)
+	if variablesInputView.Quit {
+		m.variablesInputView = nil
+		m.activateMode = SEARCH_MODE
+		m.quit = true
+		m.OutputCommand = variablesInputView.GetValue()
+		return m, tea.Quit
+	}
+	if variablesInputView.Cancel {
+		m.activateMode = SEARCH_MODE
+		m.variablesInputView = nil
+	}
+	m.variablesInputView = &variablesInputView
+	return m, nil
+}
+
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
@@ -256,9 +286,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.resetCursor()
 	}
 
-	if m.deleteMode {
+	switch m.activateMode {
+	case INPUT_VARIABLES_MODE:
+		return m.updateInputVariablesMode(msg)
+	case DELETE_MODE:
 		return m.updateDeleteMode(msg)
-	} else {
+	default:
 		return m.updateSearchMode(msg)
 	}
 }
@@ -274,7 +307,11 @@ func (m Model) View() string {
 	if m.windowHeight < MIN_WINDOW_HEIGHT {
 		return "Window height is not enough to display"
 	}
-	if m.deleteMode {
+
+	switch m.activateMode {
+	case INPUT_VARIABLES_MODE:
+		return (*m.variablesInputView).View()
+	case DELETE_MODE:
 		return m.DeleteView()
 	}
 	if m.quit {

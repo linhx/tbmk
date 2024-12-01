@@ -5,6 +5,7 @@ import (
 )
 
 type Token struct {
+	Id         int    `json:"id"`
 	IsVariable bool   `json:"isVariable"`
 	Name       string `json:"name"`
 	Value      string `json:"value"`
@@ -12,29 +13,29 @@ type Token struct {
 }
 
 func TokensParser(tmplStr string) []Token {
-	re := regexp.MustCompile("{{(`?)\\.([a-z][a-zA-Z0-9]*)(\\|(.+?))?(`?)}}")
+	re := regexp.MustCompile("(\\\\)?({{([a-z][a-zA-Z0-9]*)(\\|(.+?))?}})")
 
 	matches := re.FindAllStringSubmatchIndex(tmplStr, -1)
 
 	var tokens []Token
 	previousIndex := 0
+	id := 0
 	for _, match := range matches {
-		if (match[3] - match[2]) != (match[11] - match[10]) {
-			panic("Missing open/close `")
-		}
-
-		if previousIndex < match[0] {
-			var token = Token{IsVariable: false, Value: tmplStr[previousIndex:match[0]]}
+		if previousIndex < match[0] { // add literal string
+			id++
+			var token = Token{Id: id, IsVariable: false, Value: tmplStr[previousIndex:match[0]]}
 			tokens = append(tokens, token)
 		}
 		var rawMatched = tmplStr[match[0]:match[1]]
 		if match[3]-match[2] == 1 { // escaped
-			var token = Token{IsVariable: false, Value: tmplStr[match[2]:match[3]], Raw: rawMatched}
+			id++
+			var token = Token{Id: id, IsVariable: false, Value: tmplStr[match[4]:match[5]], Raw: rawMatched}
 			tokens = append(tokens, token)
 		} else {
-			var token = Token{IsVariable: true, Name: tmplStr[match[4]:match[5]], Raw: rawMatched}
-			if match[8] != -1 {
-				token.Value = tmplStr[match[8]:match[9]]
+			id++
+			var token = Token{Id: id, IsVariable: true, Name: tmplStr[match[6]:match[7]], Raw: rawMatched}
+			if match[10] != -1 {
+				token.Value = tmplStr[match[10]:match[11]]
 			}
 			tokens = append(tokens, token)
 		}
@@ -42,7 +43,8 @@ func TokensParser(tmplStr string) []Token {
 		previousIndex = match[1]
 	}
 	if previousIndex < len(tmplStr) {
-		var token = Token{IsVariable: false, Value: tmplStr[previousIndex:], Raw: tmplStr[previousIndex:]}
+		id++
+		var token = Token{Id: id, IsVariable: false, Value: tmplStr[previousIndex:], Raw: tmplStr[previousIndex:]}
 		tokens = append(tokens, token)
 	}
 

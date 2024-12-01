@@ -10,14 +10,12 @@ replace linhx.com/tbmk/views/save => ./views/save
 
 replace linhx.com/tbmk/views/search => ./views/search
 
-replace linhx.com/tbmk/views/inputvariables => ./views/inputvariables
+replace linhx.com/tbmk/views/variableinputs => ./views/variableinputs
 
 require (
 	github.com/charmbracelet/bubbletea v1.2.4
 	github.com/spf13/viper v1.19.0
 	linhx.com/tbmk/bookmark v0.0.0-00010101000000-000000000000
-	linhx.com/tbmk/common v0.0.0-00010101000000-000000000000
-	linhx.com/tbmk/views/inputvariables v0.0.0-00010101000000-000000000000
 	linhx.com/tbmk/views/save v0.0.0-00010101000000-000000000000
 	linhx.com/tbmk/views/search v0.0.0-00010101000000-000000000000
 )
@@ -63,4 +61,6 @@ require (
 	golang.org/x/text v0.14.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
+	linhx.com/tbmk/common v0.0.0-00010101000000-000000000000 // indirect
+	linhx.com/tbmk/views/variableinputs v0.0.0-00010101000000-000000000000 // indirect
 )

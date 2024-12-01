@@ -10,8 +10,6 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/spf13/viper"
 	"linhx.com/tbmk/bookmark"
-	"linhx.com/tbmk/common"
-	inputVariableView "linhx.com/tbmk/views/inputvariables"
 	saveView "linhx.com/tbmk/views/save"
 	searchView "linhx.com/tbmk/views/search"
 )
@@ -43,14 +41,14 @@ func getAppDir() string {
 	if err != nil {
 		panic(fmt.Errorf("Cannot get real path from symlink: %w", err))
 	}
-	return filepath.Dir(realPath);
+	return filepath.Dir(realPath)
 }
 
 func main() {
 	_, exit := NewCancellationSignal()
 	defer exit()
 	viper.AddConfigPath(getAppDir())
-	viper.SetConfigName("config");
+	viper.SetConfigName("config")
 	viper.SetDefault("tbmk.dataDir", "./data")
 	err := viper.ReadInConfig()
 	if err != nil {
@@ -84,7 +82,7 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		selectedCommand := m.(searchView.Model).SelectedItem.Command
+		selectedCommand := m.(searchView.Model).OutputCommand
 		if len(selectedCommand) > 0 {
 			fmt.Print(selectedCommand)
 		} else {

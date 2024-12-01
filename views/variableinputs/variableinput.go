@@ -1,4 +1,4 @@
-package inputvariables
+package variableinputs
 
 import (
 	"github.com/charmbracelet/bubbles/textinput"
@@ -7,7 +7,7 @@ import (
 	common "linhx.com/tbmk/common"
 )
 
-type InputVariableModel struct {
+type VariableInputModel struct {
 	token       common.Token
 	input       textinput.Model
 	hasFocus    bool
@@ -24,16 +24,16 @@ var (
 	selectedAllStyle = hasFocusStyle.Underline(true).Background(lipgloss.Color("21")).Foreground(lipgloss.Color("255"))
 )
 
-func InputVariable(token common.Token) InputVariableModel {
+func VariableInput(token common.Token) VariableInputModel {
 	t := textinput.New()
 	t.CharLimit = 0
 	t.SetValue(token.Value)
-	t.Placeholder = "{{." + token.Name + "}}" // TODO avoid duplicate code
-	t.TextStyle = selectedAllStyle
-	t.Cursor.TextStyle = selectedAllStyle
+	t.Placeholder = "{{" + token.Name + "}}" // TODO avoid duplicate code
+	t.TextStyle = defaultStyle
+	t.Cursor.TextStyle = defaultStyle
 	t.PlaceholderStyle = placeholderStyle
 	t.Prompt = ""
-	return InputVariableModel{
+	return VariableInputModel{
 		hasFocus:   false,
 		err:        nil,
 		token:      token,
@@ -43,7 +43,7 @@ func InputVariable(token common.Token) InputVariableModel {
 	}
 }
 
-func (m *InputVariableModel) SetFocus(focus bool) {
+func (m *VariableInputModel) SetFocus(focus bool) {
 	if focus {
 		m.Focus()
 	} else {
@@ -51,7 +51,7 @@ func (m *InputVariableModel) SetFocus(focus bool) {
 	}
 }
 
-func (m *InputVariableModel) Focus() {
+func (m *VariableInputModel) Focus() {
 	m.hasFocus = true
 	m.input.Focus()
 	m.input.TextStyle = selectedAllStyle
@@ -60,7 +60,7 @@ func (m *InputVariableModel) Focus() {
 	m.defaultSet = true
 }
 
-func (m *InputVariableModel) LoseFocus() {
+func (m *VariableInputModel) LoseFocus() {
 	m.hasFocus = false
 	m.selectedAll = false
 	m.input.CursorStart()
@@ -69,7 +69,7 @@ func (m *InputVariableModel) LoseFocus() {
 	m.input.Cursor.TextStyle = defaultStyle
 }
 
-func (m InputVariableModel) Update(msg tea.Msg) (InputVariableModel, tea.Cmd) {
+func (m VariableInputModel) Update(msg tea.Msg) (VariableInputModel, tea.Cmd) {
 	// TODO duplicate code
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
@@ -98,6 +98,6 @@ func (m InputVariableModel) Update(msg tea.Msg) (InputVariableModel, tea.Cmd) {
 	return m, cmd
 }
 
-func (m InputVariableModel) View() string {
+func (m VariableInputModel) View() string {
 	return m.input.View()
 }
