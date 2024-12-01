@@ -9,7 +9,6 @@ replace linhx.com/tbmk/common => ../../common
 require (
 	github.com/charmbracelet/bubbles v0.14.0
 	github.com/charmbracelet/bubbletea v0.23.0
-	github.com/gookit/color v1.5.2
 	linhx.com/tbmk/bookmark v0.0.0-00010101000000-000000000000
 	linhx.com/tbmk/common v0.0.0-00010101000000-000000000000
 )
@@ -44,7 +43,6 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/spf13/viper v1.19.0 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
-	github.com/xo/terminfo v0.0.0-20210125001918-ca9a967f8778 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.9.0 // indirect
 	golang.org/x/exp v0.0.0-20230905200255-921286631fa9 // indirect
