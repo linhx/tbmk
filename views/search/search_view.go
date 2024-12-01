@@ -6,8 +6,10 @@ import (
 
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	color "github.com/gookit/color"
 	bookmark "linhx.com/tbmk/bookmark"
+	common "linhx.com/tbmk/common"
 	variableinputs "linhx.com/tbmk/views/variableinputs"
 )
 
@@ -177,6 +179,7 @@ var (
 	highlightStyle       = color.Yellow
 	selectedStyle        = color.BgGray
 	matchedSelectedStyle = color.New(color.Yellow, color.BgGray)
+	ellipsisStyle        = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
 )
 
 func (m Model) updateDeleteMode(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -354,7 +357,8 @@ func (m Model) View() string {
 			}
 			// format command
 			_matchCommand := match.MatchCommand
-			for j := 0; j < len(match.Command); j++ {
+			truncatedCommand, isTruncated := common.TruncateWithEllipsis(match.Command, m.windowWidth)
+			for j := 0; j < len(truncatedCommand); j++ {
 				if isSelected {
 					if contains(j, _matchCommand.MatchedIndexes) {
 						line += matchedSelectedStyle.Render(string(match.Command[j]))
@@ -367,6 +371,13 @@ func (m Model) View() string {
 					} else {
 						line += string(match.Command[j])
 					}
+				}
+			}
+			if isTruncated {
+				if isSelected {
+					line += selectedStyle.Render(ellipsisStyle.Render(common.ELLIPSIS))
+				} else {
+					line += ellipsisStyle.Render(common.ELLIPSIS)
 				}
 			}
 			matchesContent += line
