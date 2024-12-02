@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
+	"github.com/muesli/termenv"
 	"github.com/spf13/viper"
 	"linhx.com/tbmk/bookmark"
 	saveView "linhx.com/tbmk/views/save"
@@ -45,6 +47,7 @@ func getAppDir() string {
 }
 
 func main() {
+	lipgloss.SetColorProfile(termenv.TrueColor)
 	_, exit := NewCancellationSignal()
 	defer exit()
 	viper.AddConfigPath(getAppDir())
