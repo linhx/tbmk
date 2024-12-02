@@ -6,6 +6,15 @@ A commands bookmark for terminal
 
 ![demo](./tbmk.gif)
 
+Support placeholders and multilines command
+
+![Add command](https://github.com/user-attachments/assets/0f501fbf-2963-484e-8b9d-1510b4c087c9)
+
+![Preview command](https://github.com/user-attachments/assets/7601267b-430e-4abc-bbd5-d9507051cdda)
+
+![Edit placeholders](https://github.com/user-attachments/assets/d2c46031-f661-43ae-bfb9-c539d7665b10)
+
+
 ## Worked on
 
 - Linux: bash, zsh, fish
