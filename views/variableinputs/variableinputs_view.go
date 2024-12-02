@@ -83,7 +83,6 @@ func (m Model) GetValue() string {
 	for _, token := range m.tokens {
 		str += token.Value
 	}
-	fmt.Print(str)
 	return str
 }
 
