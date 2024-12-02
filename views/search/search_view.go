@@ -41,6 +41,17 @@ const (
 	INPUT_VARIABLES_MODE string = "VARIABLES"
 )
 
+var (
+	topLabelStyle        = lipgloss.NewStyle().Foreground(lipgloss.Color("148")).Background(lipgloss.Color("236")).MarginRight(1)
+	highlightStyle       = color.Yellow
+	selectedStyle        = color.BgGray
+	matchedSelectedStyle = color.New(color.Yellow, color.BgGray)
+	ellipsisStyle        = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
+	listCommandsStyle    = lipgloss.NewStyle().Width(20).Border(lipgloss.NormalBorder(), false, true, false, false).BorderForeground(lipgloss.Color("69"))
+	previewCommandStyle  = lipgloss.NewStyle().Width(20)
+	previewTitleStyle    = lipgloss.NewStyle().Background(lipgloss.Color("148")).Foreground(lipgloss.Color("236"))
+)
+
 type Model struct {
 	state                    state
 	query                    string
@@ -66,7 +77,8 @@ func InitialModel(bmk bookmark.Bookmark, query string) Model {
 	ti.Focus()
 	ti.CharLimit = 156
 	ti.Width = 20
-	ti.Prompt = "Search: "
+	ti.Prompt = "TBMK - Search:"
+	ti.PromptStyle = topLabelStyle
 	ti.SetValue(query)
 
 	var matches []bookmark.MatchedItem
@@ -178,16 +190,6 @@ func contains(needle int, haystack []int) bool {
 	}
 	return false
 }
-
-var (
-	highlightStyle       = color.Yellow
-	selectedStyle        = color.BgGray
-	matchedSelectedStyle = color.New(color.Yellow, color.BgGray)
-	ellipsisStyle        = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
-	listCommandsStyle    = lipgloss.NewStyle().Width(20).Border(lipgloss.NormalBorder(), false, true, false, false).BorderForeground(lipgloss.Color("69"))
-	previewCommandStyle  = lipgloss.NewStyle().Width(20)
-	previewTitleStyle    = lipgloss.NewStyle().Background(lipgloss.Color("148")).Foreground(lipgloss.Color("236"))
-)
 
 func (m Model) updateDeleteMode(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var err errMsg
@@ -349,7 +351,8 @@ func (m Model) View() string {
 			}
 			// format title
 			_matchTitle := match.MatchTitle
-			for j := 0; j < len(match.Title); j++ {
+			truncatedTitle, isTruncatedTitle := common.TruncateWithEllipsis(match.Title, listCommandsStyle.GetWidth())
+			for j := 0; j < len(truncatedTitle); j++ {
 				if isSelected {
 					if contains(j, _matchTitle.MatchedIndexes) {
 						line += matchedSelectedStyle.Render(string(match.Title[j]))
@@ -362,6 +365,13 @@ func (m Model) View() string {
 					} else {
 						line += string(match.Title[j])
 					}
+				}
+			}
+			if isTruncatedTitle {
+				if isSelected {
+					line += selectedStyle.Render(ellipsisStyle.Render(common.ELLIPSIS))
+				} else {
+					line += ellipsisStyle.Render(common.ELLIPSIS)
 				}
 			}
 			// break line between tile and command
@@ -400,7 +410,7 @@ func (m Model) View() string {
 
 		selectedCommandStr := m.matches[m.cursor].Command
 
-		content = lipgloss.JoinHorizontal(lipgloss.Top, listCommandsStyle.Render(listCommandsContent), previewCommandStyle.Render(previewTitleStyle.Render(" Preview ")+"\n"+selectedCommandStr))
+		content = lipgloss.JoinHorizontal(lipgloss.Top, listCommandsStyle.MaxHeight(m.getContentHeight()).Render(listCommandsContent), previewCommandStyle.Render(previewTitleStyle.Render(" Preview ")+"\n"+selectedCommandStr))
 	}
 	return fmt.Sprintf("%s\n%s\n%s", m.queryInput.View(), matchesContent, content)
 }
