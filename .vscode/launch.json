@@ -1,0 +1,19 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+      {
+          "name": "Launch with APP_ENV",
+          "type": "go",
+          "request": "launch",
+          "mode": "debug",
+          "program": "${workspaceFolder}", // Path to your Go application
+          "output": "externalConsole", // Open in an external terminal
+          "console": "externalTerminal", // Explicitly use external terminal
+          "showLog": true,
+          "env": {
+              "APP_ENV": "dev" // Custom environment variable
+          },
+          "args": ["search"] // Add any additional command-line arguments if needed
+      }
+  ]
+}
