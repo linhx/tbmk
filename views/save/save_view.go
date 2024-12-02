@@ -1,56 +1,60 @@
 package views_save
 
 import (
-	"strings"
-
 	common "linhx.com/tbmk/common"
 
+	"github.com/charmbracelet/bubbles/textarea"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	bookmark "linhx.com/tbmk/bookmark"
+)
+
+const TOP_HEIGHT = 4        // 1 for app title, 1 for title input, 1 for command prompt
+const MIN_WINDOW_HEIGHT = 5 // 1 for app title, 1 for title input, 2 for command input
+const MAX_COMMAND_INPUT_HEIGHT = 6
+
+var (
+	topLabelStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("148")).Background(lipgloss.Color("236")).MarginRight(1)
+	helpStyle     = lipgloss.NewStyle().Foreground(lipgloss.Color("241"))
 )
 
 type Model struct {
 	focusIndex          int
-	inputs              []textinput.Model
-	cursorMode          textinput.CursorMode
+	titleInput          textinput.Model
+	commandInput        textarea.Model
 	err                 error
 	bmk                 bookmark.Bookmark
 	quit                bool
 	confirmOverrideMode bool
 	confirmOverrideMsg  string
+	windowWidth         int
+	windowHeight        int
 }
 
+const (
+	NUM_INPUTS = 2
+)
+
 func (m *Model) GetItem() (string, string) {
-	return m.inputs[0].Value(), m.inputs[1].Value()
+	return m.titleInput.Value(), m.commandInput.Value()
 }
 
 func InitialModel(bmk bookmark.Bookmark, command string) Model {
-	m := Model{
-		inputs:              make([]textinput.Model, 2),
+	titleInput := textinput.New()
+	titleInput.CharLimit = 100
+	titleInput.Prompt = "Title: "
+	titleInput.Focus()
+
+	commandInput := textarea.New()
+	commandInput.SetValue(command)
+
+	return Model{
 		confirmOverrideMode: false,
 		bmk:                 bmk,
+		titleInput:          titleInput,
+		commandInput:        commandInput,
 	}
-
-	var t textinput.Model
-	for i := range m.inputs {
-		t = textinput.New()
-
-		switch i {
-		case 0:
-			t.CharLimit = 100
-			t.Prompt = "Title: "
-			t.Focus()
-		case 1:
-			t.CharLimit = 500
-			t.Prompt = "Command: "
-			t.SetValue(command)
-		}
-
-		m.inputs[i] = t
-	}
-
-	return m
 }
 
 func (m Model) Init() tea.Cmd {
@@ -102,13 +106,12 @@ func (m Model) updateOverrideMode(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m *Model) updateInputs(msg tea.Msg) tea.Cmd {
-	cmds := make([]tea.Cmd, len(m.inputs))
+	cmds := make([]tea.Cmd, NUM_INPUTS)
 
 	// Only text inputs with Focus() set will respond, so it's safe to simply
 	// update all of them here without any further logic.
-	for i := range m.inputs {
-		m.inputs[i], cmds[i] = m.inputs[i].Update(msg)
-	}
+	m.titleInput, cmds[0] = m.titleInput.Update(msg)
+	m.commandInput, cmds[1] = m.commandInput.Update(msg)
 
 	return tea.Batch(cmds...)
 }
@@ -116,24 +119,12 @@ func (m *Model) updateInputs(msg tea.Msg) tea.Cmd {
 func (m Model) updateInputView(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "ctrl+c", "esc":
+		switch msg.Type {
+		case tea.KeyCtrlC, tea.KeyEsc:
 			m.quit = true
 			return m, tea.Quit
 
-		// Change cursor mode
-		case "ctrl+r":
-			m.cursorMode++
-			if m.cursorMode > textinput.CursorHide {
-				m.cursorMode = textinput.CursorBlink
-			}
-			cmds := make([]tea.Cmd, len(m.inputs))
-			for i := range m.inputs {
-				cmds[i] = m.inputs[i].SetCursorMode(m.cursorMode)
-			}
-			return m, tea.Batch(cmds...)
-
-		case "enter":
+		case tea.KeyCtrlS:
 			shouldStay, err := m.save(false)
 			if err != nil {
 				m.err = err
@@ -145,31 +136,30 @@ func (m Model) updateInputView(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, tea.Quit
 			}
 		// Set focus to next input
-		case "tab", "shift+tab", "up", "down":
-			s := msg.String()
-
+		case tea.KeyTab, tea.KeyShiftTab:
 			// Cycle indexes
-			if s == "up" || s == "shift+tab" {
+			if msg.Type == tea.KeyShiftTab {
 				m.focusIndex--
 			} else {
 				m.focusIndex++
 			}
 
-			if m.focusIndex > len(m.inputs) {
+			if m.focusIndex > NUM_INPUTS {
 				m.focusIndex = 0
 			} else if m.focusIndex < 0 {
-				m.focusIndex = len(m.inputs)
+				m.focusIndex = NUM_INPUTS
 			}
 
-			cmds := make([]tea.Cmd, len(m.inputs))
-			for i := 0; i <= len(m.inputs)-1; i++ {
-				if i == m.focusIndex {
-					// Set focused state
-					cmds[i] = m.inputs[i].Focus()
-					continue
-				}
-				// Remove focused state
-				m.inputs[i].Blur()
+			cmds := make([]tea.Cmd, NUM_INPUTS)
+			switch m.focusIndex {
+			case 0:
+				cmds[0] = m.titleInput.Focus()
+				m.commandInput.Blur()
+				break
+			case 1:
+				m.titleInput.Blur()
+				cmds[1] = m.commandInput.Focus()
+				break
 			}
 
 			return m, tea.Batch(cmds...)
@@ -183,6 +173,16 @@ func (m Model) updateInputView(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		m.windowWidth, m.windowHeight = msg.Width, msg.Height
+		commandInputHeight := m.windowHeight - TOP_HEIGHT
+		if commandInputHeight > MAX_COMMAND_INPUT_HEIGHT {
+			commandInputHeight = MAX_COMMAND_INPUT_HEIGHT
+		}
+		m.commandInput.SetHeight(commandInputHeight)
+		m.commandInput.SetWidth(m.windowWidth)
+	}
 	if m.confirmOverrideMode {
 		return m.updateOverrideMode(msg)
 	} else {
@@ -195,6 +195,9 @@ func (m Model) ConfirmOverrideView() string {
 }
 
 func (m Model) View() string {
+	if m.windowHeight < MIN_WINDOW_HEIGHT {
+		return "Window height is not enough to display"
+	}
 	if m.confirmOverrideMode {
 		return m.ConfirmOverrideView()
 	}
@@ -202,14 +205,5 @@ func (m Model) View() string {
 		return ""
 	}
 
-	var b strings.Builder
-	b.WriteString("Commands bookmark\n")
-	for i := range m.inputs {
-		b.WriteString(m.inputs[i].View())
-		if i < len(m.inputs)-1 {
-			b.WriteRune('\n')
-		}
-	}
-
-	return b.String()
+	return topLabelStyle.Render("TBMK - Save") + "\n" + helpStyle.Render("(Ctrl + S to save)") + "\n" + m.titleInput.View() + "\n" + "Command: \n" + m.commandInput.View()
 }

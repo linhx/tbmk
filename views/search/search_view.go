@@ -6,8 +6,11 @@ import (
 
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	color "github.com/gookit/color"
 	bookmark "linhx.com/tbmk/bookmark"
+	common "linhx.com/tbmk/common"
+	variableinputs "linhx.com/tbmk/views/variableinputs"
 )
 
 const MAX_DISPLAY_ITEMS int = 6
@@ -31,8 +34,22 @@ type (
 type state int
 
 const (
-	initializing state = iota
-	ready
+	initializing         state  = 0
+	ready                state  = 1
+	SEARCH_MODE          string = "SEARCH"
+	DELETE_MODE          string = "DELETE"
+	INPUT_VARIABLES_MODE string = "VARIABLES"
+)
+
+var (
+	topLabelStyle        = lipgloss.NewStyle().Foreground(lipgloss.Color("148")).Background(lipgloss.Color("236")).MarginRight(1)
+	highlightStyle       = color.Yellow
+	selectedStyle        = color.BgGray
+	matchedSelectedStyle = color.New(color.Yellow, color.BgGray)
+	ellipsisStyle        = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
+	listCommandsStyle    = lipgloss.NewStyle().Width(20).Border(lipgloss.NormalBorder(), false, true, false, false).BorderForeground(lipgloss.Color("69"))
+	previewCommandStyle  = lipgloss.NewStyle().Width(20)
+	previewTitleStyle    = lipgloss.NewStyle().Background(lipgloss.Color("148")).Foreground(lipgloss.Color("236"))
 )
 
 type Model struct {
@@ -47,10 +64,12 @@ type Model struct {
 	firstIndex               int // first item index of current displayed items
 	lastIndex                int // last item index of current displayed items
 	SelectedItem             bookmark.MatchedItem
+	OutputCommand            string
 	quit                     bool
-	deleteMode               bool
 	windowWidth              int
 	windowHeight             int
+	activateMode             string
+	variablesInputView       *variableinputs.Model
 }
 
 func InitialModel(bmk bookmark.Bookmark, query string) Model {
@@ -58,7 +77,8 @@ func InitialModel(bmk bookmark.Bookmark, query string) Model {
 	ti.Focus()
 	ti.CharLimit = 156
 	ti.Width = 20
-	ti.Prompt = "Search: "
+	ti.Prompt = "TBMK - Search:"
+	ti.PromptStyle = topLabelStyle
 	ti.SetValue(query)
 
 	var matches []bookmark.MatchedItem
@@ -66,6 +86,7 @@ func InitialModel(bmk bookmark.Bookmark, query string) Model {
 
 	return Model{
 		state:                    initializing,
+		activateMode:             SEARCH_MODE,
 		query:                    query,
 		queryInput:               ti,
 		err:                      nil,
@@ -75,7 +96,6 @@ func InitialModel(bmk bookmark.Bookmark, query string) Model {
 		firstIndex:               0,
 		lastIndex:                0,
 		matches:                  matches,
-		deleteMode:               false,
 		windowWidth:              0,
 		windowHeight:             0,
 	}
@@ -92,6 +112,10 @@ func (m *Model) init() {
 func (m *Model) reNumberOfDisplayableItems() {
 	var heightForItems = m.windowHeight - HEADER_HEIGHT
 	m.numberOfDisplayableItems = min(heightForItems/ITEM_HEIGHT, MAX_DISPLAY_ITEMS)
+}
+
+func (m Model) getContentHeight() int {
+	return m.numberOfDisplayableItems * ITEM_HEIGHT
 }
 
 func (m *Model) reCalcCursor() {
@@ -167,12 +191,6 @@ func contains(needle int, haystack []int) bool {
 	return false
 }
 
-var (
-	highlightStyle       = color.Yellow
-	selectedStyle        = color.BgGray
-	matchedSelectedStyle = color.New(color.Yellow, color.BgGray)
-)
-
 func (m Model) updateDeleteMode(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var err errMsg
 	switch msg := msg.(type) {
@@ -182,9 +200,9 @@ func (m Model) updateDeleteMode(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.bmk.Remove(m.matches[m.cursor].Id)
 			m.matches, err = m.bmk.Search(m.query)
 			m.reCalcCursor()
-			m.deleteMode = false
+			m.activateMode = SEARCH_MODE
 		case "n", "ctrl+c":
-			m.deleteMode = false
+			m.activateMode = SEARCH_MODE
 		}
 	case errMsg:
 		m.err = msg
@@ -217,6 +235,12 @@ func (m Model) updateSearchMode(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case tea.KeyEnter:
 			if len(m.matches) > 0 {
 				m.SelectedItem = m.matches[m.cursor]
+				// open variables input view
+				variablesInput := variableinputs.InitialModel(m.SelectedItem.Command, m.windowWidth, m.windowHeight)
+				m.variablesInputView = &variablesInput
+				m.activateMode = INPUT_VARIABLES_MODE
+
+				return m.updateInputVariablesMode(nil) // avoid escalate KeyEnter to variableinputs_view
 			}
 			m.quit = true
 			return m, tea.Quit
@@ -224,7 +248,7 @@ func (m Model) updateSearchMode(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.quit = true
 			return m, tea.Quit
 		case tea.KeyCtrlD:
-			m.deleteMode = true
+			m.activateMode = DELETE_MODE
 			return m, cmd
 		}
 
@@ -247,6 +271,24 @@ func (m Model) updateSearchMode(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
+func (m Model) updateInputVariablesMode(msg tea.Msg) (tea.Model, tea.Cmd) {
+	variablesInputView := *m.variablesInputView
+	variablesInputView, _ = variablesInputView.Update(msg)
+	if variablesInputView.Quit {
+		m.variablesInputView = nil
+		m.activateMode = SEARCH_MODE
+		m.quit = true
+		m.OutputCommand = variablesInputView.GetValue()
+		return m, tea.Quit
+	}
+	if variablesInputView.Cancel {
+		m.activateMode = SEARCH_MODE
+		m.variablesInputView = nil
+	}
+	m.variablesInputView = &variablesInputView
+	return m, nil
+}
+
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
@@ -254,11 +296,17 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.state = ready
 		m.reNumberOfDisplayableItems()
 		m.resetCursor()
+		contentHeight := m.getContentHeight()
+		listCommandsStyle = listCommandsStyle.MaxHeight(contentHeight).Width((m.windowWidth / 5) * 2)
+		previewCommandStyle = previewCommandStyle.MaxHeight(contentHeight).Width(m.windowWidth - listCommandsStyle.GetWidth())
 	}
 
-	if m.deleteMode {
+	switch m.activateMode {
+	case INPUT_VARIABLES_MODE:
+		return m.updateInputVariablesMode(msg)
+	case DELETE_MODE:
 		return m.updateDeleteMode(msg)
-	} else {
+	default:
 		return m.updateSearchMode(msg)
 	}
 }
@@ -274,19 +322,28 @@ func (m Model) View() string {
 	if m.windowHeight < MIN_WINDOW_HEIGHT {
 		return "Window height is not enough to display"
 	}
-	if m.deleteMode {
+
+	switch m.activateMode {
+	case INPUT_VARIABLES_MODE:
+		return (*m.variablesInputView).View()
+	case DELETE_MODE:
 		return m.DeleteView()
 	}
 	if m.quit {
 		return ""
 	}
 	var matchesContent = strconv.Itoa(len(m.matches)) + " item(s)\n----------"
+	var content string
 	if len(m.matches) > 0 {
 		// TODO refactor check if empty MatchedIndexes then don't need to format each char
+		listCommandsContent := ""
 		for i := m.firstIndex; i <= m.lastIndex; i++ {
 			match := m.matches[i]
 			isSelected := m.cursor == i
 			var line = "\n"
+			if i == m.firstIndex {
+				line = ""
+			}
 			if isSelected {
 				line += selectedStyle.Render(strconv.Itoa(i+1) + ". ")
 			} else {
@@ -294,7 +351,8 @@ func (m Model) View() string {
 			}
 			// format title
 			_matchTitle := match.MatchTitle
-			for j := 0; j < len(match.Title); j++ {
+			truncatedTitle, isTruncatedTitle := common.TruncateWithEllipsis(match.Title, listCommandsStyle.GetWidth())
+			for j := 0; j < len(truncatedTitle); j++ {
 				if isSelected {
 					if contains(j, _matchTitle.MatchedIndexes) {
 						line += matchedSelectedStyle.Render(string(match.Title[j]))
@@ -309,6 +367,13 @@ func (m Model) View() string {
 					}
 				}
 			}
+			if isTruncatedTitle {
+				if isSelected {
+					line += selectedStyle.Render(ellipsisStyle.Render(common.ELLIPSIS))
+				} else {
+					line += ellipsisStyle.Render(common.ELLIPSIS)
+				}
+			}
 			// break line between tile and command
 			if isSelected {
 				line += selectedStyle.Render(":") + "\n" + selectedStyle.Render(" > ")
@@ -317,7 +382,8 @@ func (m Model) View() string {
 			}
 			// format command
 			_matchCommand := match.MatchCommand
-			for j := 0; j < len(match.Command); j++ {
+			truncatedCommand, isTruncated := common.TruncateWithEllipsis(match.Command, listCommandsStyle.GetWidth())
+			for j := 0; j < len(truncatedCommand); j++ {
 				if isSelected {
 					if contains(j, _matchCommand.MatchedIndexes) {
 						line += matchedSelectedStyle.Render(string(match.Command[j]))
@@ -332,8 +398,19 @@ func (m Model) View() string {
 					}
 				}
 			}
-			matchesContent += line
+			if isTruncated {
+				if isSelected {
+					line += selectedStyle.Render(ellipsisStyle.Render(common.ELLIPSIS))
+				} else {
+					line += ellipsisStyle.Render(common.ELLIPSIS)
+				}
+			}
+			listCommandsContent += line
 		}
+
+		selectedCommandStr := m.matches[m.cursor].Command
+
+		content = lipgloss.JoinHorizontal(lipgloss.Top, listCommandsStyle.MaxHeight(m.getContentHeight()).Render(listCommandsContent), previewCommandStyle.Render(previewTitleStyle.Render(" Preview ")+"\n"+selectedCommandStr))
 	}
-	return fmt.Sprintf("%s\n%s", m.queryInput.View(), matchesContent)
+	return fmt.Sprintf("%s\n%s\n%s", m.queryInput.View(), matchesContent, content)
 }

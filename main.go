@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
+	"github.com/muesli/termenv"
 	"github.com/spf13/viper"
 	"linhx.com/tbmk/bookmark"
 	saveView "linhx.com/tbmk/views/save"
@@ -29,7 +31,6 @@ func NewCancellationSignal() (func(), func()) {
 	return cancel, exit
 }
 
-
 func getAppDir() string {
 	if os.Getenv("APP_ENV") == "dev" {
 		return "."
@@ -42,14 +43,15 @@ func getAppDir() string {
 	if err != nil {
 		panic(fmt.Errorf("Cannot get real path from symlink: %w", err))
 	}
-	return filepath.Dir(realPath);
+	return filepath.Dir(realPath)
 }
 
 func main() {
+	lipgloss.SetColorProfile(termenv.TrueColor)
 	_, exit := NewCancellationSignal()
 	defer exit()
 	viper.AddConfigPath(getAppDir())
-	viper.SetConfigName("config");
+	viper.SetConfigName("config")
 	viper.SetDefault("tbmk.dataDir", "./data")
 	err := viper.ReadInConfig()
 	if err != nil {
@@ -83,7 +85,7 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		selectedCommand := m.(searchView.Model).SelectedItem.Command
+		selectedCommand := m.(searchView.Model).OutputCommand
 		if len(selectedCommand) > 0 {
 			fmt.Print(selectedCommand)
 		} else {
