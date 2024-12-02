@@ -1,25 +1,28 @@
 package views_save
 
 import (
-	"strings"
-
 	common "linhx.com/tbmk/common"
 
 	"github.com/charmbracelet/bubbles/textarea"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	bookmark "linhx.com/tbmk/bookmark"
 )
 
-const TOP_HEIGHT = 3        // 1 for app title, 1 for title input, 1 for command prompt
-const MIN_WINDOW_HEIGHT = 4 // 1 for app title, 1 for title input, 2 for command input
-const MAX_COMMAND_INPUT_HEIGHT = 5
+const TOP_HEIGHT = 4        // 1 for app title, 1 for title input, 1 for command prompt
+const MIN_WINDOW_HEIGHT = 5 // 1 for app title, 1 for title input, 2 for command input
+const MAX_COMMAND_INPUT_HEIGHT = 6
+
+var (
+	topLabelStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("148")).Background(lipgloss.Color("236")).MarginRight(1)
+	helpStyle     = lipgloss.NewStyle().Foreground(lipgloss.Color("241"))
+)
 
 type Model struct {
 	focusIndex          int
 	titleInput          textinput.Model
 	commandInput        textarea.Model
-	cursorMode          textinput.CursorMode
 	err                 error
 	bmk                 bookmark.Bookmark
 	quit                bool
@@ -178,7 +181,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			commandInputHeight = MAX_COMMAND_INPUT_HEIGHT
 		}
 		m.commandInput.SetHeight(commandInputHeight)
-		return m, tea.ClearScreen
+		m.commandInput.SetWidth(m.windowWidth)
 	}
 	if m.confirmOverrideMode {
 		return m.updateOverrideMode(msg)
@@ -202,13 +205,5 @@ func (m Model) View() string {
 		return ""
 	}
 
-	var b strings.Builder
-	b.WriteString("Commands bookmark\n")
-
-	b.WriteString(m.titleInput.View())
-	b.WriteRune('\n')
-	b.WriteString("Command: \n")
-	b.WriteString(m.commandInput.View())
-
-	return b.String()
+	return topLabelStyle.Render("TBMK - Save") + "\n" + helpStyle.Render("(Ctrl + S to save)") + "\n" + m.titleInput.View() + "\n" + "Command: \n" + m.commandInput.View()
 }
