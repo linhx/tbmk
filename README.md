@@ -41,6 +41,10 @@ The data are stored in `~/.tbmk`. You can backup or edit it directly.
     - `source ~/.zshrc # zsh`
     - `source ~/.config/fish/config.fish #fish`
 
+## How to update
+
+Just extract and override the old version's files
+
 ## Development
 
 ### Run
