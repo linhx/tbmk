@@ -25,6 +25,7 @@ A commands bookmark for terminal
 - Escaping Placeholder: `\{{name}}`
 - Press `Ctrl+A` to select all placeholder value
 - Press `Ctrl+Space` in the shell to search for items. You can type keywords before press `Ctrl+Space`
+  - Press `Tab/Shift+Tab, Down/Up` to select item.
 - In the result screen, select an item then press `Ctrl + D` to delete it
 - Override the old one by add new command with the same title
 

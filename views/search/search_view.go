@@ -222,9 +222,9 @@ func (m Model) updateSearchMode(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.Type {
-		case tea.KeyUp:
+		case tea.KeyUp, tea.KeyShiftTab:
 			m.moveCursor(false)
-		case tea.KeyDown:
+		case tea.KeyDown, tea.KeyTab:
 			m.moveCursor(true)
 		case tea.KeyRunes:
 			m.resetCursor()
