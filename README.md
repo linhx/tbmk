@@ -2,7 +2,7 @@
 
 ![](https://github.com/linhx/tbmk/actions/workflows/go.yml/badge.svg)
 
-A commands bookmark for terminal
+A commands bookmark for shells
 
 ![demo](./tbmk.gif)
 
@@ -10,7 +10,7 @@ A commands bookmark for terminal
 ## Worked on
 
 - Linux: bash, zsh, fish
-- Mac zsh
+- Mac: zsh
 
 ## Features
 
