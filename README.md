@@ -34,6 +34,7 @@ The data are stored in `~/.tbmk`. You can backup or edit it directly.
 ## How to install
 
 1. Download built file on release page
+    - For MacOs: please use [v1.0.2](https://github.com/linhx/tbmk/releases/tag/1.0.2), due to the issue [https://github.com/linhx/tbmk/issues/24](https://github.com/linhx/tbmk/issues/24)
 2. Extract the file. e.g. /somepath/tbmk
 3. Run `cd /somepath/tbmk`
 4. Run `./install` (don't install by execute `/absolute-path/install`), it will appends keybinding to `~/.bashrc`, `~/.zsh` and `~/.config/fish/config.fish`
