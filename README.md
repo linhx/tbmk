@@ -20,10 +20,9 @@ A commands bookmark for shells
 ## How to use
 
 - Press `Ctrl+T` in the shell to create an item
-- Press `Tab/Shift+Tab` to switch between inputs
-- Placeholder syntax: `{{name|default value}}`. name must be in `camelCase`
-- Escaping Placeholder: `\{{name}}`
-- Press `Ctrl+A` to select all placeholder value
+- Placeholder syntax: `{{name|default value}}`. name must be in `camelCase`. *(Available since v1.1.0)*
+- Press `Tab/Shift+Tab` to switch between placeholders. *(Available since v1.1.0)*
+- Escaping Placeholder: `\{{name}}`. *(Available since v1.1.0)*
 - Press `Ctrl+Space` in the shell to search for items. You can type keywords before press `Ctrl+Space`
   - Press `Tab/Shift+Tab, Down/Up` to select item.
 - In the result screen, select an item then press `Ctrl + D` to delete it
